@@ -1,0 +1,743 @@
+{
+  "name": "ThreatWatch AI",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "237007c5-227f-4b80-8bcb-d14ee2dbcc7a",
+      "name": "01_Start_Manual_Test"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "# Scenario 1: Normal flow\nalert_data = {\n    \"alert_id\": \"A-1001\",\n    \"timestamp\": \"2026-02-10T12:00:00Z\",\n    \"severity\": \"Critical\",\n    \"asset_criticality\": \"High\",\n    \"pii_flag\": True,\n    \"user_role\": \"Privileged\",\n    \"incident_type\": \"credential_stuffing_admin_compromise\",\n    \"indicators\": [\n        \"multiple_failed_logins_spike\",\n        \"successful_login_after_failures\",\n        \"impossible_travel\",\n        \"privileged_account_used\",\n        \"pii_database_access\",\n        \"potential_data_exfiltration\"\n    ]\n}\n\n#Scenario 2: Retry loop\n\n# alert_data = {\n#     \"alert_id\": \"A-1001\",\n#     \"timestamp\": \"2026-02-10T12:00:00Z\",\n#     \"severity\": \"medium\",\n#     \"asset_criticality\": \"medium\",\n#     \"pii_flag\": False,\n#     \"user_role\": \"Privileged\",\n#     \"incident_type\": \"credential_stuffing_admin_compromise\",\n#     \"indicators\": [\n#         \"multiple_failed_logins_spike\",\n#         \"successful_login_after_failures\",\n#         \"impossible_travel\",\n#         \"privileged_account_used\",\n#         \"pii_database_access\",\n#         \"potential_data_exfiltration\"\n#     ]\n# }\n\n#Scenario 3: Escalation\n\n# alert_data = {\n#     \"alert_id\": \"A-ESCALATION-001\",\n#     \"timestamp\": \"2026-02-10T12:00:00Z\",\n#     \"severity\": \"low\",\n#     \"asset_criticality\": \"low\",\n#     \"pii_flag\": False,\n#     \"user_role\": \"Standard\",\n#     \"incident_type\": \"data_quality_issue\",\n#     \"indicators\": [\"insufficient_data\"],\n#     \"retry_count\": 3\n# }\n\nreturn alert_data"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        0
+      ],
+      "id": "c8d2319e-1183-4bea-8fb4-e5eff6d170bd",
+      "name": "02_Build_Alert_Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 03_PreCheck_Requirements - Code 버전\n * 데이터 충분성 검증 후 분기\n */\n\nconst data = $json;\n\n// 조건 체크\nconst isHighCriticality = data.asset_criticality === 'High';\nconst hasPII = data.pii_flag === true;\nconst isPrivileged = data.user_role === 'Privileged';\n\n// 디버깅 로그\nconsole.log('=== PreCheck Conditions ===');\nconsole.log('asset_criticality:', data.asset_criticality, '→', isHighCriticality ? '✓' : '✗');\nconsole.log('pii_flag:', data.pii_flag, '→', hasPII ? '✓' : '✗');\nconsole.log('user_role:', data.user_role, '→', isPrivileged ? '✓' : '✗');\n\n// 모든 조건 충족 여부\nconst allConditionsMet = isHighCriticality && hasPII && isPrivileged;\n\nconsole.log('All conditions met:', allConditionsMet ? 'TRUE ✓' : 'FALSE ✗');\n\n// 분기용 플래그 추가\ndata.precheck_passed = allConditionsMet;\n\n// 디버그 정보 추가\ndata.precheck_debug = {\n  high_criticality: isHighCriticality,\n  has_pii: hasPII,\n  is_privileged: isPrivileged,\n  decision: allConditionsMet ? 'PROCEED_TO_AI' : 'RETRY_LOOP'\n};\n\nreturn data;\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        0
+      ],
+      "id": "ec3ed5f9-b6a1-4c4e-ab71-8fdd5ea5494e",
+      "name": "03_PreCheck_Requirements"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "130d106e-2303-4bfd-91c6-70b9e08a41d0",
+              "leftValue": "={{ $json.precheck_passed }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1136,
+        0
+      ],
+      "id": "cec941e4-1ad3-477f-b6ab-b17d9783dfca",
+      "name": "04_PreCheck_Decision "
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5.2",
+          "mode": "list",
+          "cachedResultName": "GPT-5.2"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a SOC triage assistant.\n\nAnalyze the input alert JSON and produce a STRICT JSON output only.\n\nTasks:\n- Summarize the incident in 3–5 bullet points.\n- Extract entities (users, assets, IPs, locations).\n- Assign risk_level (P1, P2, P3) and risk_score (0–100).\n- Provide rationale (3–6 short reasons).\n- Provide recommended_actions (3–6 actions).\n\nRules:\n- If critical fields are missing, list them in missing_data_list.\n- Do NOT output any text outside JSON.\n\nOutput JSON schema:\n{\n  \"summary_bullets\": [],\n  \"entities\": {\n    \"users\": [],\n    \"assets\": [],\n    \"ips\": [],\n    \"locations\": []\n  },\n  \"risk_level\": \"P1|P2|P3\",\n  \"risk_score\": 0,\n  \"rationale\": [],\n  \"recommended_actions\": [],\n  \"missing_data_list\": [],\n  \"confidence\": 0.0\n}\nOutput must be a single JSON object with keys: summary_bullets, entities, risk_level, risk_score, rationale. No extra keys"
+            },
+            {
+              "content": "=Alert JSON: {{ JSON.stringify({ alert_id: $json.alert_id, severity: $json.severity, asset_criticality: $json.asset_criticality, pii_flag: $json.pii_flag, user_role: $json.user_role, indicators: $json.indicators }) }}\n\nReturn ONLY valid JSON. No markdown. No code fences"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        1408,
+        96
+      ],
+      "id": "01a3ab60-ab83-4f76-b780-b7c557cce6e7",
+      "name": "05_LLM_Risk_Assessment",
+      "credentials": {
+        "openAiApi": {
+          "id": "BMqfoIIVcf5q8Nu0",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst inputData = $json;\n\nif (!inputData) {\n  return {\n    error: true,\n    error_message: \"No input data received\",\n    ai_result: { summary_text: \"No input data\" }\n  };\n}\n\n\nlet rawText = '';\n\ntry {\n  \n  if (inputData.output && \n      Array.isArray(inputData.output) && \n      inputData.output.length > 0) {\n    \n    const firstOutput = inputData.output[0];\n    \n    if (firstOutput.content && \n        Array.isArray(firstOutput.content) && \n        firstOutput.content.length > 0) {\n      \n      const firstContent = firstOutput.content[0];\n      \n      if (firstContent.text && typeof firstContent.text === 'string') {\n        rawText = firstContent.text;\n      }\n    }\n  }\n} catch (e) {\n  console.error('Error extracting AI text:', e);\n  rawText = '';\n}\n\n\nlet cleanedText = '';\n\nif (rawText && rawText.trim().length > 0) {\n \n  cleanedText = rawText\n    .replace(/```json\\s*/g, '')  \n    .trim();\n  \n  \n  cleanedText = cleanedText.replace(/^\\s+|\\s+$/g, '');\n  \n} else {\n  cleanedText = '';\n}\n\n\nlet aiResult = null;\nlet parseSuccess = false;\nlet parseError = null;\n\nif (cleanedText.length > 0) {\n  \n  \n  try {\n    aiResult = JSON.parse(cleanedText);\n    parseSuccess = true;\n  } catch (e1) {\n    parseError = e1.message;\n    \n    \n    try {\n      const trimmed = cleanedText.trim();\n      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {\n        aiResult = JSON.parse(trimmed);\n        parseSuccess = true;\n      }\n    } catch (e2) {\n      \n      \n      try {\n        const firstBrace = cleanedText.indexOf('{');\n        const lastBrace = cleanedText.lastIndexOf('}');\n        \n        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {\n          const extracted = cleanedText.substring(firstBrace, lastBrace + 1);\n          aiResult = JSON.parse(extracted);\n          parseSuccess = true;\n        }\n      } catch (e3) {\n        \n        parseSuccess = false;\n      }\n    }\n  }\n}\n\n\nif (!parseSuccess || !aiResult || typeof aiResult !== 'object') {\n  \n  aiResult = {\n    summary_text: cleanedText.substring(0, 500) || 'No AI response',\n    parse_error: true,\n    error_message: parseError || 'JSON parsing failed',\n    raw_text_length: cleanedText.length,\n    raw_text_preview: cleanedText.substring(0, 100)\n  };\n}\n\n\nconst requiredFields = [\n  'summary_bullets',\n  'risk_level',\n  'risk_score',\n  'confidence',\n  'rationale',\n  'recommended_actions',\n  'missing_data_list'\n];\n\nlet missingFields = [];\nif (parseSuccess) {\n  requiredFields.forEach(field => {\n    if (!(field in aiResult)) {\n      missingFields.push(field);\n    }\n  });\n}\n\n\nif (missingFields.length > 0) {\n  aiResult._warnings = {\n    missing_fields: missingFields,\n    message: 'Some expected fields are missing from AI response'\n  };\n}\n\n\nif (parseSuccess) {\n  \n  if (aiResult.risk_score && typeof aiResult.risk_score !== 'number') {\n    aiResult.risk_score = parseInt(aiResult.risk_score) || 0;\n  }\n  \n  \n  if (aiResult.confidence && typeof aiResult.confidence !== 'number') {\n    aiResult.confidence = parseFloat(aiResult.confidence) || 0.5;\n  }\n  \n  \n  ['summary_bullets', 'rationale', 'recommended_actions', 'missing_data_list'].forEach(field => {\n    if (aiResult[field] && !Array.isArray(aiResult[field])) {\n      aiResult[field] = [aiResult[field]];\n    }\n  });\n}\n\n\n\naiResult._metadata = {\n  parse_success: parseSuccess,\n  raw_text_length: rawText.length,\n  cleaned_text_length: cleanedText.length,\n  extraction_timestamp: new Date().toISOString(),\n  has_all_required_fields: missingFields.length === 0\n};\n\n\nreturn {\n  ...inputData,\n  ai_result: aiResult\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        96
+      ],
+      "id": "919ae37b-0aaf-4e8c-b5ec-72e34f13772e",
+      "name": "06_Parse_LLM_Output"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4c0a07ec-13d1-4907-9ab4-b7c91629c6c1",
+              "leftValue": "={{ $json.ai_result.confidence >= 0.7 }}",
+              "rightValue": "false",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "a3bd2db2-5eea-4692-b2f1-efc644f7c0b7",
+              "leftValue": "={{ $json.ai_result.confidence < 0.7 }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1920,
+        96
+      ],
+      "id": "76860c6b-d12f-4cd7-aaae-7e67ce095edf",
+      "name": "07_Check_NeedsMoreData"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst j = $json;\n\n\nconst ai = j.ai_result || {};\n\n\nlet summary = 'No summary';\nif (ai.summary_bullets && Array.isArray(ai.summary_bullets) && ai.summary_bullets.length > 0) {\n  summary = ai.summary_bullets.join(' | ');\n}\n\n\nlet missingCount = 0;\nif (ai.missing_data_list && Array.isArray(ai.missing_data_list)) {\n  missingCount = ai.missing_data_list.length;\n}\n\n\nconst final_payload = {\n  alert_id: (j.alert_id || 'UNKNOWN').toString().trim(),\n  timestamp: j.timestamp || new Date().toISOString(),\n  risk_level: (ai.risk_level || 'P3').toString().trim(),\n  risk_score: Number(ai.risk_score) || 0,\n  incident_type: (j.incident_type || ai.incident_type || 'unclassified').toString(),\n  summary: summary,\n  missing_data_count: missingCount,\n  confidence: ai.confidence !== undefined ? ai.confidence : null\n};\n\n\nreturn {\n  ...j,\n  final_payload: final_payload\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2144,
+        112
+      ],
+      "id": "c103bb8a-3b4b-4ce3-b514-beb674e22ecd",
+      "name": "08_Normalize_Final_Payload"
+    },
+    {
+      "parameters": {
+        "jsCode": "const SCENARIO = \"P1\";  \n// ==========================================\n\nconst data = $input.first().json;\n\n// ========================================\n\n// ========================================\nconst P1_SCENARIOS = [\n  {\n    alert_id: \"P1-SCENARIO-01\",\n    incident_type: \"credential_compromise\",\n    risk_score: 95,\n    summary: \"CRITICAL - Privileged account compromise detected. Multiple failed login attempts from unusual location (China) followed by successful authentication. Administrator privileges accessed. Immediate investigation required.\",\n    missing_data_count: 8,\n    confidence: 0.85\n  },\n  {\n    alert_id: \"P1-SCENARIO-02\",\n    incident_type: \"data_exfiltration\",\n    risk_score: 98,\n    summary: \"URGENT - Large-scale data exfiltration in progress. 500GB of customer PII data accessed and transferred to external IP within 10 minutes. Database dump detected. Active breach suspected.\",\n    missing_data_count: 5,\n    confidence: 0.92\n  },\n  {\n    alert_id: \"P1-SCENARIO-03\",\n    incident_type: \"ransomware_activity\",\n    risk_score: 99,\n    summary: \"CRITICAL - Ransomware encryption activity detected on file server. Multiple files encrypted with .locked extension. Lateral movement to 15 additional hosts observed. Immediate containment urgent.\",\n    missing_data_count: 3,\n    confidence: 0.95\n  },\n  {\n    alert_id: \"P1-SCENARIO-04\",\n    incident_type: \"privilege_escalation\",\n    risk_score: 88,\n    summary: \"High severity - Unauthorized privilege escalation detected. Standard user account gained Domain Admin rights through exploited vulnerability (CVE-2024-1234). Suspicious PowerShell commands executed.\",\n    missing_data_count: 6,\n    confidence: 0.78\n  },\n  {\n    alert_id: \"P1-SCENARIO-05\",\n    incident_type: \"apt_malware\",\n    risk_score: 93,\n    summary: \"CRITICAL - Advanced persistent threat (APT) backdoor identified on executive workstation. Command and control communication to known malicious IP (APT28 infrastructure). Data staging observed in temp directory.\",\n    missing_data_count: 7,\n    confidence: 0.88\n  }\n];\n\n// ========================================\n\n// ========================================\nconst P2_SCENARIOS = [\n  {\n    alert_id: \"P2-SCENARIO-01\",\n    incident_type: \"suspicious_authentication\",\n    risk_score: 75,\n    summary: \"High priority - Unusual authentication pattern detected. User logged in from two different countries (Korea and USA) within 30 minutes. VPN not used. Possible account sharing or credential theft.\",\n    missing_data_count: 4,\n    confidence: 0.80\n  },\n  {\n    alert_id: \"P2-SCENARIO-02\",\n    incident_type: \"malware_detection\",\n    risk_score: 70,\n    summary: \"Moderate threat - Malicious file detected on user workstation. Antivirus quarantined suspicious executable. No signs of execution yet, but file originated from phishing email. User education needed.\",\n    missing_data_count: 3,\n    confidence: 0.85\n  },\n  {\n    alert_id: \"P2-SCENARIO-03\",\n    incident_type: \"unauthorized_access_attempt\",\n    risk_score: 78,\n    summary: \"Alert - Multiple failed access attempts to HR database from internal IP. 25 login failures in 5 minutes. Account not locked out due to legacy system. Possible internal threat or compromised workstation.\",\n    missing_data_count: 5,\n    confidence: 0.72\n  },\n  {\n    alert_id: \"P2-SCENARIO-04\",\n    incident_type: \"data_access_anomaly\",\n    risk_score: 68,\n    summary: \"Suspicious activity - Employee accessed 500+ customer records in one session, 10x normal behavior. Access occurred after hours (2 AM). No business justification found in schedule. Potential data harvesting.\",\n    missing_data_count: 6,\n    confidence: 0.77\n  },\n  {\n    alert_id: \"P2-SCENARIO-05\",\n    incident_type: \"network_anomaly\",\n    risk_score: 73,\n    summary: \"Network alert - Unusual outbound traffic detected. Workstation sending large volumes of encrypted data to cloud storage service (Mega.nz) not approved by IT. Possible shadow IT or data leak.\",\n    missing_data_count: 4,\n    confidence: 0.81\n  }\n];\n\n// ========================================\n\n// ========================================\nconst P3_SCENARIOS = [\n  {\n    alert_id: \"P3-SCENARIO-01\",\n    incident_type: \"policy_violation\",\n    risk_score: 25,\n    summary: \"Low severity - User accessed shared drive outside business hours (8 PM). File accessed: quarterly_report.xlsx. No download or modification detected. Matches user's normal work pattern (known late worker).\",\n    missing_data_count: 2,\n    confidence: 0.90\n  },\n  {\n    alert_id: \"P3-SCENARIO-02\",\n    incident_type: \"failed_login\",\n    risk_score: 30,\n    summary: \"Routine alert - Three consecutive failed login attempts from known user device at home. User successfully authenticated on fourth attempt using correct password. Likely typo or caps lock. No further action needed.\",\n    missing_data_count: 1,\n    confidence: 0.85\n  },\n  {\n    alert_id: \"P3-SCENARIO-03\",\n    incident_type: \"software_block\",\n    risk_score: 20,\n    summary: \"Info - Unauthorized software installation attempt blocked by endpoint protection. User tried to install browser extension (AdBlock Plus) not in whitelist. Application control policy enforced successfully.\",\n    missing_data_count: 1,\n    confidence: 0.88\n  },\n  {\n    alert_id: \"P3-SCENARIO-04\",\n    incident_type: \"usb_device\",\n    risk_score: 28,\n    summary: \"Low priority - USB device connected to workstation. Device registered as personal smartphone (iPhone) for charging only. No file transfer detected. Device management policy applied.\",\n    missing_data_count: 2,\n    confidence: 0.92\n  },\n  {\n    alert_id: \"P3-SCENARIO-05\",\n    incident_type: \"email_quarantine\",\n    risk_score: 22,\n    summary: \"Routine - Suspicious email quarantined before delivery. Phishing attempt detected by email gateway. User never saw the email. No user action required. Anti-phishing training scheduled.\",\n    missing_data_count: 1,\n    confidence: 0.89\n  }\n];\n\n\n\n\nif (SCENARIO === \"P1\") {\n  \n  const randomP1 = P1_SCENARIOS[Math.floor(Math.random() * P1_SCENARIOS.length)];\n  \n  data.final_payload.risk_level = \"P1\";\n  data.final_payload.risk_score = randomP1.risk_score;\n  data.final_payload.incident_type = randomP1.incident_type;\n  data.final_payload.alert_id = randomP1.alert_id + \"-\" + Date.now();\n  data.final_payload.summary = randomP1.summary;\n  data.final_payload.missing_data_count = randomP1.missing_data_count;\n  data.final_payload.confidence = randomP1.confidence;\n  \n  console.log(\"🔴 P1 CRITICAL 시나리오 선택:\", randomP1.alert_id);\n  console.log(\"📊 Risk Score:\", randomP1.risk_score);\n  console.log(\"📧 Result: Email will be sent\");\n  \n} else if (SCENARIO === \"P2\") {\n  \n  const randomP2 = P2_SCENARIOS[Math.floor(Math.random() * P2_SCENARIOS.length)];\n  \n  data.final_payload.risk_level = \"P2\";\n  data.final_payload.risk_score = randomP2.risk_score;\n  data.final_payload.incident_type = randomP2.incident_type;\n  data.final_payload.alert_id = randomP2.alert_id + \"-\" + Date.now();\n  data.final_payload.summary = randomP2.summary;\n  data.final_payload.missing_data_count = randomP2.missing_data_count;\n  data.final_payload.confidence = randomP2.confidence;\n  \n  console.log(\"🟠 P2 HIGH 시나리오 선택:\", randomP2.alert_id);\n  console.log(\"📊 Risk Score:\", randomP2.risk_score);\n  console.log(\"📧 Result: Email will be sent\");\n  \n} else if (SCENARIO === \"P3\") {\n  \n  const randomP3 = P3_SCENARIOS[Math.floor(Math.random() * P3_SCENARIOS.length)];\n  \n  data.final_payload.risk_level = \"P3\";\n  data.final_payload.risk_score = randomP3.risk_score;\n  data.final_payload.incident_type = randomP3.incident_type;\n  data.final_payload.alert_id = randomP3.alert_id + \"-\" + Date.now();\n  data.final_payload.summary = randomP3.summary;\n  data.final_payload.missing_data_count = randomP3.missing_data_count;\n  data.final_payload.confidence = randomP3.confidence;\n  \n  console.log(\"🟢 P3 LOW 시나리오 선택:\", randomP3.alert_id);\n  console.log(\"📊 Risk Score:\", randomP3.risk_score);\n  console.log(\"📝 Result: Logged only (no email)\");\n  \n} else {\n  \n  console.error(\"❌ Invalid SCENARIO value. Use 'P1', 'P2', or 'P3'\");\n  console.log(\"⚠️ Defaulting to P2...\");\n  \n  const defaultP2 = P2_SCENARIOS[0];\n  data.final_payload.risk_level = \"P2\";\n  data.final_payload.risk_score = defaultP2.risk_score;\n  data.final_payload.incident_type = defaultP2.incident_type;\n  data.final_payload.alert_id = defaultP2.alert_id + \"-ERROR-\" + Date.now();\n  data.final_payload.summary = defaultP2.summary;\n  data.final_payload.missing_data_count = defaultP2.missing_data_count;\n  data.final_payload.confidence = defaultP2.confidence;\n}\n\n\ndata.final_payload.timestamp = new Date().toISOString();\n\nreturn [data];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2352,
+        112
+      ],
+      "id": "ef4c81a8-0094-4114-a898-6565f1b359bd",
+      "name": "09_Demo_Scenario_Switch"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ea963bde-8aaf-428f-bac2-8809aba44a14",
+              "leftValue": "={{ $json.final_payload.risk_level }}",
+              "rightValue": "=P1",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "fe0e10ae-c4fe-4619-b654-98cf8c2566d9",
+              "leftValue": "={{ $json.final_payload.risk_level }}",
+              "rightValue": "P2",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2544,
+        112
+      ],
+      "id": "16eb3c0f-3d4c-47d0-b255-032e5d5d8dd2",
+      "name": "10_Risk_Level_Decision"
+    },
+    {
+      "parameters": {
+        "sendTo": "royalsj2346@gmail.com",
+        "subject": "={{ $json.final_payload.email_type === 'ESCALATION' ? '⚠️ MANUAL REVIEW REQUIRED' : '🚨' }} [{{ $json.final_payload.risk_level }}] Security Alert - {{ $json.final_payload.alert_id }}",
+        "emailType": "text",
+        "message": "=🚨 SECURITY ALERT - {{ $json.final_payload.risk_level }}\n═══════════════════════════════════════════\n\n📋 INCIDENT DETAILS\n───────────────────────────────────────────\nAlert ID:        {{ $json.final_payload.alert_id }}\nTimestamp:       {{ $json.final_payload.timestamp }}\nRisk Level:      {{ $json.final_payload.risk_level }}\nRisk Score:      {{ $json.final_payload.risk_score }}/100\nIncident Type:   {{ $json.final_payload.incident_type }}\nConfidence:      {{ $json.final_payload.confidence * 100 }}%\n\n📝 SUMMARY\n───────────────────────────────────────────\n{{ $json.final_payload.summary }}\n\n⚠️ RECOMMENDED ACTIONS\n───────────────────────────────────────────\n1. Review incident details immediately\n2. Verify affected systems and accounts\n3. Initiate containment if confirmed\n4. Update incident tracking system\n\n═══════════════════════════════════════════\nThis is an automated alert. Response required within 30 minutes.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2880,
+        16
+      ],
+      "id": "c0d4aaa5-6098-45a6-b5d5-321db06ad782",
+      "name": "11_Send_Alert_Email",
+      "webhookId": "b7c05a65-7480-4143-8193-2963e1df01f3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Ql2tbjnHjdkPKLGp",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1XMsGzxa6JbulcixbPxuPrSpTr_TuIEMvBXorTC_lpuw",
+          "mode": "list",
+          "cachedResultName": "ThreatWatch AI",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1XMsGzxa6JbulcixbPxuPrSpTr_TuIEMvBXorTC_lpuw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "시트1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1XMsGzxa6JbulcixbPxuPrSpTr_TuIEMvBXorTC_lpuw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $json.final_payload.timestamp }}",
+            "Alert_ID": "={{ $json.final_payload.alert_id }}",
+            "Risk_Level": "={{ $json.final_payload.risk_level }}",
+            "Risk_Score": "={{ $json.final_payload.risk_score }}",
+            "Incident_Type": "={{ $json.final_payload.incident_type }}",
+            "Summary": "={{ $json.final_payload.summary }}",
+            "Missing Data Count": "=Type: Expression Value: {{ $json.final_payload.missing_data_count }}",
+            "Confidence": "={{ $json.final_payload.confidence }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Alert_ID",
+              "displayName": "Alert_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Risk_Level",
+              "displayName": "Risk_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Risk_Score",
+              "displayName": "Risk_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Incident_Type",
+              "displayName": "Incident_Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Missing Data Count",
+              "displayName": "Missing Data Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Confidence",
+              "displayName": "Confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2912,
+        304
+      ],
+      "id": "bae34159-6c00-4880-a806-9240fbbcec88",
+      "name": "11_Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "t9klS3UnEI1LKlT2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 3-1_Increment_Retry\n * Language: JavaScript\n * Mode: Run Once for All Items\n */\n\nconst data = $json;\n\n// retry_count 초기화 또는 증가\nif (!data.retry_count) {\n  data.retry_count = 1;\n} else {\n  data.retry_count = data.retry_count + 1;\n}\n\n// 재시도 이력 기록\nif (!data.retry_history) {\n  data.retry_history = [];\n}\n\ndata.retry_history.push({\n  attempt: data.retry_count,\n  timestamp: new Date().toISOString(),\n  reason: 'Insufficient data for risk assessment',\n  missing_fields: []\n});\n\n// 누락 필드 파악 (디버깅용)\nconst missingFields = [];\nif (!data.asset_criticality || data.asset_criticality === 'medium') {\n  missingFields.push('asset_criticality');\n}\nif (!data.user_role || data.user_role === 'Standard') {\n  missingFields.push('user_role');\n}\nif (data.pii_flag === undefined || data.pii_flag === false) {\n  missingFields.push('pii_flag');\n}\n\ndata.retry_history[data.retry_history.length - 1].missing_fields = missingFields;\n\n// console.log 수정 (괄호 추가!)\nconsole.log(`🔄 Retry attempt ${data.retry_count} - Missing: ${missingFields.join(', ')}`);\n\nreturn data;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        -384
+      ],
+      "id": "6e975125-bddb-4c84-8c32-dd7e601f57f8",
+      "name": "4-1 _Increment_Retry"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a32d393b-5c75-478f-807f-64201ba546b0",
+              "leftValue": "={{ $json.retry_count }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1104,
+        -384
+      ],
+      "id": "51230a00-bdd1-4af8-81a8-dae28be0e62f",
+      "name": "4-2_Check_Max_Retries"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 3-3_Enrich_Data\n * 자동 데이터 보강\n */\n\nconst data = $json;\n\nconsole.log(`🔍 Data enrichment attempt ${data.retry_count}`);\n\n// asset_criticality 보강\nif (!data.asset_criticality || data.asset_criticality === 'medium' || data.asset_criticality === 'low') {\n  data.asset_criticality = 'High';\n  console.log('  ✅ asset_criticality → High');\n}\n\n// pii_flag 보강\nif (data.pii_flag === false || data.pii_flag === undefined) {\n  data.pii_flag = true;\n  console.log('  ✅ pii_flag → true');\n}\n\n// user_role 보강\nif (!data.user_role || data.user_role === 'Standard') {\n  data.user_role = 'Privileged';\n  console.log('  ✅ user_role → Privileged');\n}\n\n// indicators 보강\nif (!data.indicators || data.indicators.length < 3) {\n  data.indicators = data.indicators || [];\n  data.indicators.push('enriched_from_siem');\n  console.log('  ✅ indicators enriched');\n}\n\n// 보강 메타데이터\ndata.enrichment = {\n  enriched: true,\n  attempt: data.retry_count,\n  timestamp: new Date().toISOString()\n};\n\nconsole.log(`✅ Enrichment complete - returning to PreCheck`);\n\nreturn data;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        -416
+      ],
+      "id": "b3e9c6e5-66a8-4d69-a916-f39eaa1f47df",
+      "name": "4-3_Enrich_Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n\nconst data = $json;\n\nconsole.log(`⚠️ ESCALATION: Max retries (${data.retry_count}) reached`);\n\n\ndata.escalation = {\n  status: 'PENDING_HUMAN_REVIEW',\n  escalated_at: new Date().toISOString(),\n  retry_attempts: data.retry_count || 0,\n  missing_fields: [],\n  retry_history: data.retry_history || [],\n  message: 'Automated data enrichment failed. Manual review required.'\n};\n\n\nconst requiredFields = {\n  'Asset Criticality': data.asset_criticality,\n  'User Role': data.user_role,\n  'PII Flag': data.pii_flag,\n  'Incident Type': data.incident_type\n};\n\nfor (const [field, value] of Object.entries(requiredFields)) {\n  if (!value || value === 'UNKNOWN' || value === 'medium' || value === 'Standard') {\n    data.escalation.missing_fields.push(field);\n  }\n}\n\n\ndata.send_escalation_email = true;\n\n\ndata.workflow_status = 'PAUSED_FOR_HUMAN_INPUT';\n\nconsole.log(`📧 Escalation email will be sent. Missing: ${data.escalation.missing_fields.join(', ')}`);\n\nreturn data;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        -160
+      ],
+      "id": "e9d69c2b-3e63-42f8-ba84-8ceec837566f",
+      "name": "4-4 _Escalate_to_Human"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n\n\nconst data = $json;\n\n\nconst escalation = data.escalation || {};\nconst missingFields = escalation.missing_fields || [];\nconst retryHistory = data.retry_history || [];\nconst retryCount = data.retry_count || 0;\nconst alertId = data.alert_id || 'UNKNOWN-ALERT';\n\n\nconst escalation_payload = {\n  alert_id: alertId,\n  timestamp: new Date().toISOString(),\n  risk_level: 'ESCALATION',\n  risk_score: 0,\n  incident_type: data.incident_type || 'data_insufficient',\n  summary: `🚨 ESCALATION REQUIRED - Alert ${alertId} needs manual review after ${retryCount} automatic attempts. Missing fields: ${missingFields.length > 0 ? missingFields.join(', ') : 'Multiple fields'}`,\n  missing_data_count: missingFields.length,\n  confidence: 0\n};\n\n\nescalation_payload.escalation_details = {\n  retry_attempts: retryCount,\n  missing_fields: missingFields,\n  retry_history: retryHistory,\n  escalated_at: escalation.escalated_at || new Date().toISOString(),\n  message: escalation.message || 'Automated data enrichment failed. Manual review required.'\n};\n\n\nescalation_payload.email_type = 'ESCALATION';\n\n\nconsole.log('=== Escalation Email Conversion ===');\nconsole.log('Alert ID:', alertId);\nconsole.log('Retry Count:', retryCount);\nconsole.log('Missing Fields:', missingFields);\nconsole.log('Email Type:', escalation_payload.email_type);\n\n\nreturn {\n  ...data,\n  final_payload: escalation_payload\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        -160
+      ],
+      "id": "914484d5-f24b-4b8a-af7f-68118cf40389",
+      "name": "4-5_Convert_to_Email_Format"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n\nconst data = $json;\nconst ai = data.ai_result || {};\n\n// Confidence 조정 (감점)\nconst originalConfidence = ai.confidence || 0;\nconst adjustedConfidence = Math.max(0, originalConfidence - 0.15); // 15% 감점\n\nconsole.log('🔧 === CONFIDENCE ADJUSTMENT ===');\nconsole.log('Original:', originalConfidence);\nconsole.log('Adjusted:', adjustedConfidence, '(-15%)');\n\n// AI 결과 업데이트\nai.confidence = adjustedConfidence;\nai.confidence_adjusted = true;\nai.adjustment_reason = 'Insufficient supporting data';\n\n// 경고 메시지 추가\nai.warnings = ai.warnings || [];\nai.warnings.push({\n  type: 'LOW_CONFIDENCE',\n  message: 'Analysis proceeded with incomplete data. Manual verification recommended.',\n  timestamp: new Date().toISOString()\n});\n\ndata.ai_result = ai;\n\nconsole.log('✅ Confidence adjusted - added warning flag');\n\nreturn data;\n\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1936,
+        688
+      ],
+      "id": "d437bb3f-28b7-476d-a340-f54c340db38a",
+      "name": "7-2_Adjust_Confidence"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 07-1_Log_Low_Confidence\n * 낮은 confidence 기록 및 알림\n */\n\nconst data = $json;\nconst ai = data.ai_result || {};\nconst confidence = ai.confidence || 0;\nconst missingData = ai.missing_data_list || [];\n\nconsole.log('⚠️ === LOW CONFIDENCE DETECTED ===');\nconsole.log('Confidence Score:', confidence);\nconsole.log('Threshold:', 0.7);\nconsole.log('Missing Data Items:', missingData.length);\nconsole.log('Missing Fields:', missingData);\n\n// 로우 컨피던스 메타데이터 추가\ndata.low_confidence_flag = true;\ndata.confidence_log = {\n  original_confidence: confidence,\n  threshold: 0.7,\n  missing_data_count: missingData.length,\n  missing_fields: missingData,\n  logged_at: new Date().toISOString(),\n  reason: 'Insufficient data - proceeding with caution'\n};\n\nconsole.log('📝 Low confidence logged - proceeding with adjusted parameters');\n\nreturn data;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        688
+      ],
+      "id": "3f999278-a433-49b7-b1f2-92bf39e5a31d",
+      "name": "7-1 Log_Low_Confidence"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "01_Start_Manual_Test": {
+      "main": [
+        [
+          {
+            "node": "02_Build_Alert_Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02_Build_Alert_Data": {
+      "main": [
+        [
+          {
+            "node": "03_PreCheck_Requirements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03_PreCheck_Requirements": {
+      "main": [
+        [
+          {
+            "node": "04_PreCheck_Decision ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04_PreCheck_Decision ": {
+      "main": [
+        [
+          {
+            "node": "05_LLM_Risk_Assessment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4-1 _Increment_Retry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05_LLM_Risk_Assessment": {
+      "main": [
+        [
+          {
+            "node": "06_Parse_LLM_Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06_Parse_LLM_Output": {
+      "main": [
+        [
+          {
+            "node": "07_Check_NeedsMoreData",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "07_Check_NeedsMoreData": {
+      "main": [
+        [
+          {
+            "node": "7-1 Log_Low_Confidence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "08_Normalize_Final_Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "08_Normalize_Final_Payload": {
+      "main": [
+        [
+          {
+            "node": "09_Demo_Scenario_Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09_Demo_Scenario_Switch": {
+      "main": [
+        [
+          {
+            "node": "10_Risk_Level_Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10_Risk_Level_Decision": {
+      "main": [
+        [
+          {
+            "node": "11_Send_Alert_Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "11_Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "11_Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11_Send_Alert_Email": {
+      "main": [
+        []
+      ]
+    },
+    "4-1 _Increment_Retry": {
+      "main": [
+        [
+          {
+            "node": "4-2_Check_Max_Retries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4-2_Check_Max_Retries": {
+      "main": [
+        [
+          {
+            "node": "4-3_Enrich_Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4-4 _Escalate_to_Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4-3_Enrich_Data": {
+      "main": [
+        [
+          {
+            "node": "02_Build_Alert_Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4-4 _Escalate_to_Human": {
+      "main": [
+        [
+          {
+            "node": "4-5_Convert_to_Email_Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4-5_Convert_to_Email_Format": {
+      "main": [
+        [
+          {
+            "node": "11_Send_Alert_Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7-2_Adjust_Confidence": {
+      "main": [
+        [
+          {
+            "node": "08_Normalize_Final_Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7-1 Log_Low_Confidence": {
+      "main": [
+        [
+          {
+            "node": "7-2_Adjust_Confidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "b98b2447-c168-4558-a81b-9ca7febb0813",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "41f556d8bb6328ec1c17a307db313764faa89c982ca0ccbee206e191d01a9de4"
+  },
+  "id": "cO2wOMG_K-_-GppOphxKT",
+  "tags": []
+}
