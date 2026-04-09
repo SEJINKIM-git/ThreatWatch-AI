@@ -1,168 +1,137 @@
-# ThreatWatch-AI.demo
-LLM-assisted SOC incident triage workflow built in n8n—parses alerts, scores risk, routes escalations, and logs an auditable trail.
+# ThreatWatch AI
 
+ThreatWatch AI is an AI-assisted security triage platform that combines:
 
-ThreatWatch AI is an **LLM-assisted security incident triage workflow** built in **n8n**.  
-It converts raw alert/incident inputs into **structured risk assessments** (risk level, score, incident type, summary, entities), then automatically routes cases for **escalation (email)** or **monitoring/logging (Google Sheets audit trail)**.
+- a presentation-ready React frontend in [`threatwatch-dashboard/`](./threatwatch-dashboard)
+- an n8n workflow export in [`ThreatWatch AI.json`](./ThreatWatch%20AI.json)
+- a Python workflow engine and supporting modules in the repository root
 
-> Portfolio project for IS 3060 (Business Process Automation / AI-enabled workflow)
+This repository now reflects the actual project structure behind the ThreatWatch AI website, rather than only the presentation frontend.
 
----
+## Repository Structure
 
-## What problem this solves
+```text
+.
+├── ThreatWatch AI.json            # n8n workflow export
+├── BPMN Main Workflow.png         # main BPMN diagram
+├── BPMN Red Box Flow.png          # red-box BPMN diagram
+├── main.py                        # Python workflow runner
+├── config.py                      # environment-based configuration
+├── models.py                      # shared workflow data models
+├── scenarios.py                   # deterministic scenario library
+├── modules/                       # workflow modules
+│   ├── alert_builder.py
+│   ├── precheck.py
+│   ├── ai_analyzer.py
+│   ├── normalizer.py
+│   ├── scenario_switch.py
+│   ├── decision_router.py
+│   ├── email_notifier.py
+│   └── sheets_logger.py
+├── requirements.txt               # Python dependencies
+└── threatwatch-dashboard/         # deployed frontend site
+```
 
-Security teams face:
-- **Alert overload** → difficult to prioritize what matters first
-- **Inconsistent triage decisions** across analysts
-- **Slow escalation** due to manual context gathering & reporting
-- Weak **auditability** when decisions are not logged consistently
+## What Each Layer Does
 
-ThreatWatch AI addresses these by enforcing a consistent pipeline:
-**Input → LLM assessment → Parse/Normalize → Decision gateway → Notify + Log**
+### 1. Frontend
 
----
+The frontend in [`threatwatch-dashboard/`](./threatwatch-dashboard):
 
-## Key features
+- presents the ThreatWatch AI product website
+- runs deterministic demo scenarios
+- supports bilingual UI (Korean / English)
+- sends live webhook payloads to n8n
+- supports recipient email delivery experiences through the product workspace
 
-- **LLM Risk Assessment**
-  - Generates: `risk_level`, `risk_score`, `incident_type`, `summary`, `entities`, `recommended_action`
-- **Structured Output (Parse + Normalize)**
-  - Converts LLM output into clean JSON fields suitable for automation (no “free-text only” workflow)
-- **Decision Gateway (High risk vs Low risk)**
-  - High risk → email escalation
-  - Low risk → log and monitor/close
-- **Low-Confidence Handling (Human-in-the-loop)**
-  - If model confidence is low, route to a safer flow (adjust/review) before escalation
-- **Retry/Recovery**
-  - Adds basic operational resilience when API calls fail or output is malformed
-- **Audit Trail**
-  - Logs every triage case + decision outputs to Google Sheets for traceability
+### 2. n8n Workflow
 
----
+The workflow export in [`ThreatWatch AI.json`](./ThreatWatch%20AI.json):
 
-## Tech stack
+- receives alert payloads through a webhook
+- enriches and pre-checks the case
+- performs LLM-based assessment
+- normalizes output
+- routes by severity
+- triggers email and logging actions
 
-- **n8n** (workflow orchestration)
-- **LLM API** (OpenAI)
-- **Google Sheets** (audit logging)
-- **Email (Gmail/SMTP)** (escalation alert)
-- (Optional) **Python/JavaScript** (parsing/normalization helpers)
+### 3. Python Backend / Workflow Engine
 
----
+The Python layer mirrors the triage logic used across the project:
 
+- builds alert payloads
+- validates data completeness
+- calls the LLM or uses mock analysis in demo mode
+- normalizes final payloads
+- applies scenario overrides for controlled demonstrations
+- decides whether escalation email should be sent
+- logs cases to Google Sheets
 
+This backend code is useful for local testing, workflow validation, and showing the operational logic outside of n8n.
 
----
+## Local Run
 
-## Workflow overview
+### Python workflow
 
-### 1) Input
-- Manual test trigger or webhook trigger receives incident text / alert payload.
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python main.py P1
+```
 
-### 2) Pre-check
-- Validates required fields (e.g., missing data → return/stop or request more context).
+You can replace `P1` with:
 
-### 3) LLM Risk Assessment
-- Sends incident context to LLM
-- Asks model to return structured JSON:
-  - risk level/score/type/summary/entities/confidence
+- `P2`
+- `P3`
+- or a specific scenario id
 
-### 4) Parse + Normalize
-- Parses JSON safely
-- Normalizes field names/types
-- Handles fenced code blocks (```json) or minor formatting issues
+### Frontend
 
-### 5) Decision Gateway
-- `High Risk?` → Escalate
-- else → Log/Monitor/Close
+```bash
+cd threatwatch-dashboard
+npm install
+npm run dev
+```
 
-### 6) Outputs
-- Escalation: send email notification
-- Logging: append row to Google Sheets (audit trail)
+### Frontend production build
 
----
+```bash
+cd threatwatch-dashboard
+npm run build
+```
 
-## How to run locally (n8n)
+## Environment Setup
 
-### Prerequisites
-- n8n (cloud or self-hosted)
-- LLM API key (OpenAI/Gemini)
-- Google account access for Sheets (OAuth)
-- Email credentials (Gmail/SMTP)
+Create a local `.env` file for the Python workflow when running outside demo mode.
 
-### Step 1 — Import the workflow
-1. Open n8n
-2. **Import** → `Import from File`
-3. Select: `workflows/threatwatch_ai.workflow.json`
+Expected variables include:
 
-### Step 2 — Set credentials (IMPORTANT)
-Create credentials in n8n for:
-- LLM provider (OpenAI/Gemini)
-- Google Sheets
-- Email (Gmail/SMTP)
+- `ANTHROPIC_API_KEY`
+- `GMAIL_USER`
+- `GMAIL_APP_PASSWORD`
+- `ALERT_RECIPIENT`
+- `GOOGLE_SHEETS_CREDENTIALS_PATH`
+- `GOOGLE_SHEET_ID`
+- `MAX_RETRIES`
+- `DEMO_MODE`
 
-> Do NOT hardcode API keys in the workflow JSON.
+## Website / Backend Alignment
 
-### Step 3 — Prepare Google Sheet (Audit Log)
-Create a sheet with headers like:
-- `timestamp`
-- `incident_id`
-- `risk_level`
-- `risk_score`
-- `incident_type`
-- `summary`
-- `entities`
-- `confidence`
-- `recommended_action`
-- `route` (escalate/log)
-- `raw_input`
+The deployed website uses:
 
-### Step 4 — Execute
-- Run the workflow using manual trigger with a test incident
-- Confirm:
-  - High risk → email arrives
-  - All cases → row appended to Google Sheets
+- the frontend from [`threatwatch-dashboard/`](./threatwatch-dashboard)
+- the n8n webhook workflow for live runs
+- deterministic scenario fallback when live calls fail
 
----
+This repository is organized to reflect that exact split:
 
-## Sample input / output
+- **UI / product experience** lives in `threatwatch-dashboard/`
+- **live automation flow** lives in `ThreatWatch AI.json`
+- **workflow logic reference / execution engine** lives in the root Python code
 
-### Sample input
-See: `docs/sample_input.json`
+## Notes
 
-Example incident text:
-- “Multiple failed admin logins from unfamiliar IPs; unusual data export spike…”
-
-### Sample output (normalized JSON)
-See: `docs/sample_output.json`
-
-Example fields:
-- `risk_level: High`
-- `risk_score: 0.87`
-- `incident_type: Unauthorized Access`
-- `entities: ["admin_account", "suspicious_ip", "data_export"]`
-- `confidence: 0.62`
-- `recommended_action: "Escalate to Manager; isolate account; preserve logs"`
-
----
-
-## Security & privacy notes
-
-- This repository **does not include credentials**.
-- Add `.env` to `.gitignore` and keep secrets in n8n Credentials Manager.
-- Treat incident data as sensitive; avoid uploading real customer/PII logs.
-
----
-
-
-
-## What I learned / portfolio highlights
-
-- Translating **BPMN decision gateways** into executable workflow logic (IF/ELSE routing)
-- Making LLM outputs **operationally reliable** via parsing/normalization + confidence handling
-- Designing for **auditability** (decision trail) in risk/compliance-sensitive processes
-- Building end-to-end automation: input → AI → routing → notification → logging
-
----
-
-
+- Secrets are not committed.
+- `.env`, `node_modules`, `dist`, virtual environments, and cache files should remain ignored.
+- The frontend presentation repo used for Vercel deployment can stay separate, but this repository is now the source-of-truth repo for the full ThreatWatch AI project structure.
