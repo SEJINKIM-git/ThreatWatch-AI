@@ -1869,7 +1869,33 @@ function InboxDeliveryPanel({
   );
 }
 
+function classifyWebhookUrl(url) {
+  const trimmed = url.trim();
+  if (!trimmed) return "empty";
+  if (/\/workflow\//.test(trimmed)) return "editor";
+  if (/\/webhook-test\//.test(trimmed)) return "test";
+  if (/\/webhook\//.test(trimmed)) return "valid";
+  return "unknown";
+}
+
 function DeploymentBridgePanel({ mode, webhookUrl, setWebhookUrl, scenariosLoading, scenariosCount, lastRunMeta, lang }) {
+  const urlKind = classifyWebhookUrl(webhookUrl);
+
+  const urlWarning =
+    urlKind === "editor"
+      ? (lang === "ko"
+          ? "입력한 URL은 n8n 워크플로우 편집기 주소입니다. Webhook 트리거 노드를 클릭해 표시되는 Production URL(/webhook/...)을 복사해 주세요."
+          : "This is the n8n workflow editor URL, not a callable endpoint. Open the Webhook trigger node and copy its Production URL (/webhook/...) instead.")
+      : urlKind === "test"
+      ? (lang === "ko"
+          ? "테스트 URL(/webhook-test/...)은 n8n에서 실행 중인 테스트 세션에서만 동작합니다. 워크플로우를 Active로 켜고 Production URL(/webhook/...)을 사용해 주세요."
+          : "Test URLs (/webhook-test/...) only work during an active n8n test session. Activate the workflow and use the Production URL (/webhook/...) instead.")
+      : null;
+
+  const borderColor = urlKind === "editor" || urlKind === "test"
+    ? "rgba(255,167,38,0.55)"
+    : "rgba(255,255,255,0.09)";
+
   return (
     <SectionPanel title={lang === "ko" ? "연동 브리지" : "Integration Bridge"} subtitle={lang === "ko" ? "Scenario Mode로 기본 동작을 검증하고, Connected Workflow로 n8n과 연동합니다." : "Validate the default flow in Scenario Mode and connect n8n in Connected Workflow."}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "10px", marginBottom: "14px" }}>
@@ -1887,7 +1913,7 @@ function DeploymentBridgePanel({ mode, webhookUrl, setWebhookUrl, scenariosLoadi
         style={{
           width: "100%",
           borderRadius: "12px",
-          border: "1px solid rgba(255,255,255,0.09)",
+          border: `1px solid ${borderColor}`,
           background: "rgba(0,0,0,0.24)",
           color: "#fff",
           padding: "12px 14px",
@@ -1896,6 +1922,23 @@ function DeploymentBridgePanel({ mode, webhookUrl, setWebhookUrl, scenariosLoadi
           fontFamily: BODY_FONT,
         }}
       />
+
+      {urlWarning ? (
+        <div style={{
+          marginTop: "8px",
+          padding: "10px 12px",
+          borderRadius: "10px",
+          background: "rgba(255,167,38,0.08)",
+          border: "1px solid rgba(255,167,38,0.32)",
+          fontSize: "11px",
+          color: "rgba(255,213,120,0.95)",
+          lineHeight: 1.75,
+          ...WRAP_ANYWHERE,
+        }}>
+          {urlWarning}
+        </div>
+      ) : null}
+
       <div style={{ marginTop: "8px", fontSize: "11px", color: "rgba(255,255,255,0.42)", lineHeight: 1.7, ...WRAP_ANYWHERE }}>
         {lang === "ko" ? "Scenario Mode에서는 URL 없이도 제품의 기본 동작을 검증할 수 있습니다. Connected Workflow에서는 Webhook을 호출하고, 실패하면 같은 시나리오의 deterministic fallback을 보여줍니다." : "Scenario Mode validates the base product flow without a URL. Connected Workflow calls the webhook and falls back to a deterministic version of the same case if the live request fails."}
       </div>
