@@ -19,11 +19,12 @@ class EmailNotifier:
     @staticmethod
     def send_alert(state: WorkflowState) -> bool:
         """알림 이메일 발송"""
+        subject = EmailNotifier._create_subject(state)
         
         if Config.DEMO_MODE:
             logger.info("📧 [DEMO MODE] Email would be sent")
             logger.info(f"   To: {Config.ALERT_RECIPIENT}")
-            logger.info(f"   Subject: 🚨 [{state.final_payload.risk_level}] Security Alert")
+            logger.info(f"   Subject: {subject}")
             return True
         
         try:
@@ -33,10 +34,10 @@ class EmailNotifier:
             msg = MIMEMultipart('alternative')
             msg['From'] = Config.GMAIL_USER
             msg['To'] = Config.ALERT_RECIPIENT
-            msg['Subject'] = f"🚨 [{payload.risk_level}] Security Alert - {payload.alert_id}"
+            msg['Subject'] = subject
             
             # HTML 본문
-            html_body = EmailNotifier._create_html_body(payload)
+            html_body = EmailNotifier._create_html_body(state)
             msg.attach(MIMEText(html_body, 'html'))
             
             # 발송
@@ -50,22 +51,64 @@ class EmailNotifier:
         except Exception as e:
             logger.error(f"❌ Email send failed: {e}")
             return False
+
+    @staticmethod
+    def _create_subject(state: WorkflowState) -> str:
+        """이메일 제목 생성"""
+        payload = state.final_payload
+        precheck = state.precheck_result
+
+        if precheck and precheck.decision == "ESCALATE":
+            return f"⚠️ Data Request - Missing Context for {payload.alert_id}"
+
+        return f"🚨 [{payload.risk_level}] Security Alert - {payload.alert_id}"
     
     @staticmethod
-    def _create_html_body(payload) -> str:
+    def _create_html_body(state: WorkflowState) -> str:
         """HTML 이메일 본문 생성"""
+        payload = state.final_payload
+        precheck = state.precheck_result
+        is_missing_data_escalation = precheck and precheck.decision == "ESCALATE"
+        missing_fields = []
+        if precheck:
+            missing_fields = precheck.missing_critical + precheck.missing_important
+        missing_fields_html = "".join(f"<li>{field}</li>" for field in missing_fields) or "<li>No missing fields reported</li>"
         
         risk_color = {
             "P1": "#dc3545",
             "P2": "#fd7e14",
             "P3": "#ffc107"
         }.get(payload.risk_level, "#6c757d")
+
+        header_title = "⚠️ Additional Data Required" if is_missing_data_escalation else "🚨 Security Incident Alert"
+        summary_title = "Request Summary" if is_missing_data_escalation else "Summary"
+        summary_text = (
+            "ThreatWatch AI reached the maximum retry limit, but the incident still lacks required context. "
+            "Please provide the missing logs or fields below before automated classification continues."
+            if is_missing_data_escalation
+            else payload.summary
+        )
+        action_items = (
+            f"""
+                        <li>Provide additional logs or evidence for the missing fields</li>
+                        <li>Confirm whether the source telemetry is malformed or delayed</li>
+                        <li>Route the enriched case back into ThreatWatch AI for reassessment</li>
+                        <li>Missing fields: <ul>{missing_fields_html}</ul></li>
+            """
+            if is_missing_data_escalation
+            else """
+                        <li>Review incident details in SOC dashboard</li>
+                        <li>Verify and contain affected systems</li>
+                        <li>Initiate incident response protocol</li>
+                        <li>Update status within 30 minutes</li>
+            """
+        )
         
         return f"""
         <html>
         <body style="font-family: Arial, sans-serif;">
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px;">
-                <h1>🚨 Security Incident Alert</h1>
+                <h1>{header_title}</h1>
             </div>
             
             <div style="padding: 20px; background-color: #f8f9fa;">
@@ -94,17 +137,14 @@ class EmailNotifier:
                 </table>
                 
                 <div style="margin-top: 20px; padding: 15px; background-color: white; border-left: 4px solid #17a2b8;">
-                    <h3>Summary</h3>
-                    <p>{payload.summary}</p>
+                    <h3>{summary_title}</h3>
+                    <p>{summary_text}</p>
                 </div>
                 
                 <div style="margin-top: 20px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107;">
                     <h3>Recommended Actions</h3>
                     <ul>
-                        <li>Review incident details in SOC dashboard</li>
-                        <li>Verify and contain affected systems</li>
-                        <li>Initiate incident response protocol</li>
-                        <li>Update status within 30 minutes</li>
+{action_items}
                     </ul>
                 </div>
             </div>

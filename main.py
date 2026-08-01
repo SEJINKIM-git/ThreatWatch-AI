@@ -15,6 +15,7 @@ from modules.scenario_switch import ScenarioSwitcher
 from modules.decision_router import DecisionRouter
 from modules.email_notifier import EmailNotifier
 from modules.sheets_logger import GoogleSheetsLogger
+from modules.s3_logger import S3AuditLogger
 
 # 로깅 설정
 logging.basicConfig(
@@ -59,18 +60,24 @@ def run_workflow(demo_scenario: str = "P1"):
         validator = PreCheckValidator()
         state = validator.check(state)
         print(f"   ✅ Decision: {state.precheck_result.decision}")
-        
-        # Step 04
-        print_step(4, "AI Risk Assessment")
-        analyzer = AIAnalyzer()
-        state = analyzer.analyze(state)
-        print(f"   🤖 Risk: {state.ai_result.risk_level} ({state.ai_result.risk_score}/100)")
-        
-        # Step 07
-        print_step(7, "Normalize Payload")
-        normalizer = PayloadNormalizer()
-        state = normalizer.normalize(state)
-        print(f"   📦 Payload created")
+
+        if state.precheck_result.decision == "ESCALATE":
+            missing_fields = state.precheck_result.missing_critical + state.precheck_result.missing_important
+            print_step(4, "Missing Data Escalation")
+            print(f"   🔁 Retry limit reached: {state.retry_count}/{Config.MAX_RETRIES}")
+            print(f"   📧 Requesting additional data: {', '.join(missing_fields)}")
+        else:
+            # Step 04
+            print_step(4, "AI Risk Assessment")
+            analyzer = AIAnalyzer()
+            state = analyzer.analyze(state)
+            print(f"   🤖 Risk: {state.ai_result.risk_level} ({state.ai_result.risk_score}/100)")
+            
+            # Step 07
+            print_step(7, "Normalize Payload")
+            normalizer = PayloadNormalizer()
+            state = normalizer.normalize(state)
+            print(f"   📦 Payload created")
         
         # Step 08
         print_step(8, f"Demo Switch → {selected_scenario['label']}")
@@ -85,7 +92,8 @@ def run_workflow(demo_scenario: str = "P1"):
         
         # Step 10
         if should_email:
-            print_step(10, "Sending Email")
+            step_name = "Sending Data Request Email" if state.precheck_result.decision == "ESCALATE" else "Sending Email"
+            print_step(10, step_name)
             notifier = EmailNotifier()
             notifier.send_alert(state)
         
@@ -93,7 +101,12 @@ def run_workflow(demo_scenario: str = "P1"):
         print_step(11, "Logging to Sheets")
         sheets_logger = GoogleSheetsLogger()
         sheets_logger.log_incident(state)
-        
+
+        # Step 12
+        print_step(12, "Logging to S3")
+        s3_logger = S3AuditLogger()
+        s3_logger.log_incident(state)
+
         print_header("✅ Workflow Complete!")
         print(f"Alert: {state.final_payload.alert_id}")
         print(f"Risk: {state.final_payload.risk_level} ({state.final_payload.risk_score}/100)")

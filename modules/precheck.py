@@ -3,6 +3,7 @@
 데이터 충분성 검증
 """
 
+from config import Config
 from models import WorkflowState, PreCheckResult
 import logging
 
@@ -37,7 +38,7 @@ class PreCheckValidator:
         
         total_missing = len(missing_critical) + len(missing_important)
         has_enough = len(missing_critical) == 0 and len(missing_important) <= 2
-        can_retry = state.retry_count < 3
+        can_retry = state.retry_count < Config.MAX_RETRIES
         
         decision = "PROCEED" if has_enough else ("RETRY" if can_retry else "ESCALATE")
         

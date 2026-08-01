@@ -10,6 +10,7 @@ from .scenario_switch import ScenarioSwitcher
 from .decision_router import DecisionRouter
 from .email_notifier import EmailNotifier
 from .sheets_logger import GoogleSheetsLogger
+from .s3_logger import S3AuditLogger
 
 __all__ = [
     'AlertBuilder',
@@ -19,5 +20,6 @@ __all__ = [
     'ScenarioSwitcher',
     'DecisionRouter',
     'EmailNotifier',
-    'GoogleSheetsLogger'
+    'GoogleSheetsLogger',
+    'S3AuditLogger'
 ]
