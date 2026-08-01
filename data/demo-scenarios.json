@@ -1,0 +1,408 @@
+{
+  "version": 1,
+  "generated_for": "ThreatWatch AI demo and presentation site",
+  "scenarios": [
+    {
+      "id": "p1-admin-compromise",
+      "label": "P1 Critical",
+      "tag": "HIGH RISK",
+      "tag_color": "#ff1744",
+      "risk_level": "P1",
+      "weight": 24,
+      "description": "Privileged account compromise with impossible travel and PII access.",
+      "presenter_note": "Shows why ThreatWatch AI escalates instantly when multiple high-risk indicators align.",
+      "expected_route": "Email + Sheets + Immediate containment",
+      "input": {
+        "severity": "Critical",
+        "asset_criticality": "High",
+        "pii_flag": true,
+        "user_role": "Privileged",
+        "incident_type": "credential_stuffing_admin_compromise",
+        "indicators": [
+          "multiple_failed_logins_spike",
+          "successful_login_after_failures",
+          "impossible_travel",
+          "privileged_account_used",
+          "pii_database_access",
+          "potential_data_exfiltration"
+        ],
+        "description": "Multiple failed login attempts followed by a successful privileged login and customer data access."
+      },
+      "precheck": {
+        "decision": "PROCEED",
+        "missing_critical": [],
+        "missing_important": [],
+        "retry_count": 0
+      },
+      "expected_output": {
+        "risk_level": "P1",
+        "risk_score": 96,
+        "summary": "Critical identity compromise on an admin account with signs of impossible travel and sensitive database access.",
+        "confidence": 0.93,
+        "missing_data_count": 1,
+        "missing_data_list": [
+          "destination_hostname"
+        ],
+        "summary_bullets": [
+          "Privileged identity showed a failure burst followed by success",
+          "Session telemetry indicates impossible travel behavior",
+          "PII-backed asset was queried immediately after login"
+        ],
+        "rationale": [
+          "High-value identity plus impossible travel strongly suggests account takeover",
+          "The compromised session reached sensitive data stores within minutes",
+          "Multiple correlated indicators reduce the chance of a benign explanation"
+        ],
+        "recommended_actions": [
+          "Disable the compromised account and revoke active sessions",
+          "Block the source infrastructure and preserve authentication logs",
+          "Start incident response and review database activity for exfiltration"
+        ]
+      }
+    },
+    {
+      "id": "p1-data-exfiltration",
+      "label": "Data Exfiltration",
+      "tag": "EXFIL",
+      "tag_color": "#ff6d00",
+      "risk_level": "P1",
+      "weight": 18,
+      "description": "Large outbound transfer from a customer data environment to an untrusted destination.",
+      "presenter_note": "Useful for showing that the platform can pivot from identity abuse to data movement cases.",
+      "expected_route": "Email + Sheets + Data loss playbook",
+      "input": {
+        "severity": "Critical",
+        "asset_criticality": "High",
+        "pii_flag": true,
+        "user_role": "Service Account",
+        "incident_type": "data_exfiltration",
+        "indicators": [
+          "bulk_data_transfer",
+          "external_destination_ip",
+          "customer_pii_table_access",
+          "anomalous_transfer_volume"
+        ],
+        "description": "A service account transferred an unusually large volume of customer records to an external destination."
+      },
+      "precheck": {
+        "decision": "PROCEED",
+        "missing_critical": [],
+        "missing_important": [],
+        "retry_count": 0
+      },
+      "expected_output": {
+        "risk_level": "P1",
+        "risk_score": 98,
+        "summary": "Potential data exfiltration detected from a sensitive environment after an abnormal bulk export.",
+        "confidence": 0.95,
+        "missing_data_count": 2,
+        "missing_data_list": [
+          "file_hashes",
+          "downstream_storage_location"
+        ],
+        "summary_bullets": [
+          "Transfer volume is far above the normal baseline",
+          "Destination reputation is unknown and outside approved ranges",
+          "The touched data sources include regulated customer records"
+        ],
+        "rationale": [
+          "Volume and destination both indicate high exfiltration likelihood",
+          "The asset contains regulated data that raises business impact",
+          "Service account behavior deviates sharply from recent history"
+        ],
+        "recommended_actions": [
+          "Suspend the service account and stop outbound transfer jobs",
+          "Capture packet and object-store telemetry for scoping",
+          "Notify data protection owners and begin impact assessment"
+        ]
+      }
+    },
+    {
+      "id": "p2-suspicious-auth",
+      "label": "P2 Suspicious Auth",
+      "tag": "MEDIUM",
+      "tag_color": "#ff9100",
+      "risk_level": "P2",
+      "weight": 20,
+      "description": "Suspicious login pattern with geolocation mismatch but no confirmed data impact yet.",
+      "presenter_note": "Good for explaining how ThreatWatch AI avoids overreacting when signal is meaningful but incomplete.",
+      "expected_route": "Email + Analyst review",
+      "input": {
+        "severity": "Medium",
+        "asset_criticality": "Medium",
+        "pii_flag": false,
+        "user_role": "Standard",
+        "incident_type": "suspicious_authentication",
+        "indicators": [
+          "multiple_failed_logins_spike",
+          "vpn_exit_node_source",
+          "geo_velocity_anomaly",
+          "legacy_system_target"
+        ],
+        "description": "The same user account appeared to authenticate from two different regions within a short time window."
+      },
+      "precheck": {
+        "decision": "PROCEED",
+        "missing_critical": [],
+        "missing_important": [],
+        "retry_count": 0
+      },
+      "expected_output": {
+        "risk_level": "P2",
+        "risk_score": 74,
+        "summary": "Suspicious authentication activity detected with location anomalies and elevated login failures.",
+        "confidence": 0.79,
+        "missing_data_count": 2,
+        "missing_data_list": [
+          "mfa_result",
+          "endpoint_posture"
+        ],
+        "summary_bullets": [
+          "Authentication pattern is inconsistent with user travel history",
+          "Source IP belongs to an anonymized network range",
+          "No downstream high-value asset access is confirmed yet"
+        ],
+        "rationale": [
+          "Behavior is suspicious but not yet tied to a confirmed compromise",
+          "The account has medium business impact and limited asset reach",
+          "Additional context such as MFA logs would improve confidence"
+        ],
+        "recommended_actions": [
+          "Challenge the user session with MFA or step-up verification",
+          "Review recent login telemetry and reset the password if needed",
+          "Monitor for lateral movement or privileged access attempts"
+        ]
+      }
+    },
+    {
+      "id": "p3-policy-violation",
+      "label": "P3 Low Noise",
+      "tag": "LOW",
+      "tag_color": "#00e676",
+      "risk_level": "P3",
+      "weight": 14,
+      "description": "Benign but notable after-hours activity that should be logged instead of escalated.",
+      "presenter_note": "Shows that the model can de-escalate and avoid analyst fatigue.",
+      "expected_route": "Sheet logging only",
+      "input": {
+        "severity": "Low",
+        "asset_criticality": "Low",
+        "pii_flag": false,
+        "user_role": "Standard",
+        "incident_type": "policy_violation",
+        "indicators": [
+          "after_hours_access",
+          "known_device",
+          "normal_file_pattern"
+        ],
+        "description": "User accessed internal files after hours from a familiar device and network."
+      },
+      "precheck": {
+        "decision": "PROCEED",
+        "missing_critical": [],
+        "missing_important": [],
+        "retry_count": 0
+      },
+      "expected_output": {
+        "risk_level": "P3",
+        "risk_score": 27,
+        "summary": "Low-severity policy deviation observed, but surrounding context looks consistent with normal behavior.",
+        "confidence": 0.9,
+        "missing_data_count": 1,
+        "missing_data_list": [
+          "manager_approval_reference"
+        ],
+        "summary_bullets": [
+          "Access occurred outside normal hours but from a familiar environment",
+          "No privileged assets or sensitive records were touched",
+          "The activity pattern matches previous low-risk deviations"
+        ],
+        "rationale": [
+          "Available telemetry suggests policy drift rather than compromise",
+          "There is no corroborating evidence of malicious follow-on actions",
+          "Business impact remains low even if the activity was unauthorized"
+        ],
+        "recommended_actions": [
+          "Log the event and notify the team lead for awareness",
+          "Review after-hours policy exceptions for this user",
+          "Keep the account under passive monitoring for 24 hours"
+        ]
+      }
+    },
+    {
+      "id": "retry-loop-enrichment",
+      "label": "PreCheck Retry",
+      "tag": "RETRY",
+      "tag_color": "#ffea00",
+      "risk_level": "P2",
+      "weight": 12,
+      "description": "Initial alert is incomplete, so the workflow asks for enrichment before returning a decision.",
+      "presenter_note": "Lets you explain that ThreatWatch AI does not force an answer when key fields are missing.",
+      "expected_route": "Retry enrichment -> Analyst review",
+      "input": {
+        "severity": "",
+        "asset_criticality": "",
+        "pii_flag": false,
+        "user_role": "",
+        "incident_type": "suspicious_activity",
+        "indicators": [
+          "anomalous_traffic_pattern"
+        ],
+        "description": "A sparse alert arrived without the role, asset criticality, or severity fields populated."
+      },
+      "precheck": {
+        "decision": "RETRY",
+        "missing_critical": [],
+        "missing_important": [
+          "user_role",
+          "asset_criticality",
+          "severity"
+        ],
+        "retry_count": 1
+      },
+      "expected_output": {
+        "risk_level": "P2",
+        "risk_score": 61,
+        "summary": "The first pass lacked key context, so ThreatWatch AI requested enrichment before issuing a medium-priority review outcome.",
+        "confidence": 0.66,
+        "missing_data_count": 3,
+        "missing_data_list": [
+          "user_role",
+          "asset_criticality",
+          "severity"
+        ],
+        "summary_bullets": [
+          "Alert schema is incomplete on the first ingestion pass",
+          "The workflow preserves the incident but asks for more context",
+          "After enrichment, the case remains noteworthy but not critical"
+        ],
+        "rationale": [
+          "Too many important fields were absent to trust an immediate classification",
+          "The retry path reduces false positives while keeping analyst visibility",
+          "Residual signal still merits manual review after enrichment"
+        ],
+        "recommended_actions": [
+          "Re-query the source system for user and asset metadata",
+          "Attach severity mapping before final triage",
+          "Send the enriched record to an analyst if critical fields stay blank"
+        ]
+      }
+    },
+    {
+      "id": "low-confidence-review",
+      "label": "Low Confidence",
+      "tag": "REVIEW",
+      "tag_color": "#00b0ff",
+      "risk_level": "P2",
+      "weight": 12,
+      "description": "Signals conflict with one another, so the workflow keeps a human in the loop.",
+      "presenter_note": "Helpful for demonstrating responsible AI behavior instead of overconfident automation.",
+      "expected_route": "Human review before action",
+      "input": {
+        "severity": "Medium",
+        "asset_criticality": "Medium",
+        "pii_flag": false,
+        "user_role": "Privileged",
+        "incident_type": "ambiguous_alert",
+        "indicators": [
+          "single_failed_login",
+          "known_vpn_ip",
+          "admin_console_access",
+          "normal_behavior_overlap"
+        ],
+        "description": "The alert includes one concerning access event, but other context overlaps with a normal maintenance pattern."
+      },
+      "precheck": {
+        "decision": "PROCEED",
+        "missing_critical": [],
+        "missing_important": [],
+        "retry_count": 0
+      },
+      "expected_output": {
+        "risk_level": "P2",
+        "risk_score": 58,
+        "summary": "Mixed evidence suggests caution: the event is worth review, but confidence is not high enough for automated containment.",
+        "confidence": 0.44,
+        "missing_data_count": 2,
+        "missing_data_list": [
+          "maintenance_window_reference",
+          "peer_host_telemetry"
+        ],
+        "summary_bullets": [
+          "Some indicators suggest misuse of a privileged path",
+          "Other evidence overlaps with normal maintenance behavior",
+          "Confidence stays below the threshold for autonomous response"
+        ],
+        "rationale": [
+          "Conflicting telemetry weakens the certainty of the model decision",
+          "A privileged context still raises the need for analyst attention",
+          "Human review is safer than automatic disruption in this case"
+        ],
+        "recommended_actions": [
+          "Send the case to a human analyst for validation",
+          "Correlate with change-management and maintenance records",
+          "Escalate only if additional suspicious indicators appear"
+        ]
+      }
+    },
+    {
+      "id": "escalation-manual-handoff",
+      "label": "Escalation Mail",
+      "tag": "ESCALATE",
+      "tag_color": "#d500f9",
+      "risk_level": "P1",
+      "weight": 8,
+      "description": "Repeated retries still fail to populate critical context, so the workflow escalates directly to a human owner.",
+      "presenter_note": "A strong final slide scenario because it shows human handoff instead of pretending the system knows everything.",
+      "expected_route": "Escalation email + analyst handoff",
+      "input": {
+        "severity": "",
+        "asset_criticality": "",
+        "pii_flag": false,
+        "user_role": "",
+        "incident_type": "data_quality_issue",
+        "indicators": [
+          "insufficient_data"
+        ],
+        "description": "The source system kept sending an alert without enough context even after multiple retries."
+      },
+      "precheck": {
+        "decision": "ESCALATE",
+        "missing_critical": [],
+        "missing_important": [
+          "user_role",
+          "asset_criticality",
+          "severity"
+        ],
+        "retry_count": 3
+      },
+      "expected_output": {
+        "risk_level": "P1",
+        "risk_score": 88,
+        "summary": "After repeated enrichment failures, ThreatWatch AI escalated the incident to a human responder because the source data remained unreliable.",
+        "confidence": 0.51,
+        "missing_data_count": 3,
+        "missing_data_list": [
+          "user_role",
+          "asset_criticality",
+          "severity"
+        ],
+        "summary_bullets": [
+          "Critical fields stayed empty after the maximum retry budget",
+          "The system preserved the case instead of silently dropping it",
+          "Human escalation was selected as the safest fail-safe path"
+        ],
+        "rationale": [
+          "Repeated missing context means automated classification is untrustworthy",
+          "Escalation keeps analysts informed about broken telemetry pipelines",
+          "Fail-safe behavior matters for real deployments and demos alike"
+        ],
+        "recommended_actions": [
+          "Notify the telemetry owner about the malformed alert source",
+          "Route the incident to a human responder with the collected context",
+          "Pause automatic actions until upstream data quality is restored"
+        ]
+      }
+    }
+  ]
+}

@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-SCENARIO_FILE = Path(__file__).resolve().parent / "threatwatch-dashboard" / "public" / "demo-scenarios.json"
+SCENARIO_FILE = Path(__file__).resolve().parent / "data" / "demo-scenarios.json"
 _SCENARIO_CACHE: Optional[List[Dict[str, Any]]] = None
 
 
