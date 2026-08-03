@@ -53,6 +53,10 @@ class AIAnalyzer:
             
         except Exception as e:
             logger.error(f"❌ AI Analysis failed: {e}")
+            if not Config.DEMO_MODE:
+                # 실서비스 경로에서는 실패를 숨기지 않습니다.
+                # SQS가 재시도하고, 3회 실패하면 DLQ로 격리됩니다.
+                raise
             state.ai_result = self._fallback_analysis(alert)
         
         return state
