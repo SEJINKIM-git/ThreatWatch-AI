@@ -23,6 +23,18 @@ from modules.s3_logger import S3AuditLogger
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+
+class InvalidPayload(Exception):
+    """
+    재시도해도 결과가 같은 페이로드 오류.
+
+    파이프라인 중간에서 발생하는 오류와 반드시 구분되어야 합니다.
+    이 예외만 메시지 삭제로 이어지고, 나머지는 전부 재시도 → DLQ 경로를 탑니다.
+    UnicodeEncodeError 같은 ValueError 하위 예외가 여기 섞이면
+    실제 장애가 조용히 삭제되므로 전용 예외 타입을 씁니다.
+    """
+
+
 # --- 콜드스타트 초기화 (핸들러 밖) ---
 _builder = AlertBuilder()
 _validator = PreCheckValidator()
@@ -42,14 +54,14 @@ def _parse_body(record: dict) -> dict:
     try:
         payload = json.loads(raw)
     except json.JSONDecodeError as e:
-        raise ValueError(f"body is not valid JSON: {e}") from e
+        raise InvalidPayload(f"body is not valid JSON: {e}") from e
 
     if not isinstance(payload, dict):
-        raise ValueError("body must be a JSON object")
+        raise InvalidPayload("body must be a JSON object")
 
     missing = [f for f in REQUIRED_FIELDS if not payload.get(f)]
     if missing:
-        raise ValueError(f"missing required fields: {missing}")
+        raise InvalidPayload(f"missing required fields: {missing}")
 
     return payload
 
@@ -111,11 +123,13 @@ def handler(event, context):
         message_id = record.get("messageId", "unknown")
         try:
             process_record(record)
-        except ValueError as e:
-            # 페이로드 자체가 잘못된 경우는 재시도해도 소용없습니다.
+        except InvalidPayload as e:
+            # 페이로드 자체가 잘못된 경우는 재시도해도 결과가 같습니다.
             # 실패로 올리지 않고 삭제해서 DLQ 낭비를 막습니다.
             logger.error(f"[{message_id}] invalid payload, dropping: {e}")
         except Exception as e:
+            # 그 외 모든 오류는 일시적일 수 있으므로 재시도시킵니다.
+            # maxReceiveCount(3) 초과 시 DLQ로 격리됩니다.
             logger.exception(f"[{message_id}] processing failed: {e}")
             failures.append({"itemIdentifier": message_id})
 
