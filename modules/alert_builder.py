@@ -61,3 +61,24 @@ class AlertBuilder:
             retry_count=(scenario or {}).get("precheck", {}).get("retry_count", 0),
         )
         return state
+
+    @staticmethod
+    def build_from_payload(payload: Dict[str, Any]) -> WorkflowState:
+        """실제 알림 페이로드로 상태 생성 (Lambda 경로)"""
+
+        now = datetime.now(timezone.utc)
+
+        alert_data = AlertData(
+            alert_id=payload.get("alert_id") or f"A-{int(now.timestamp())}",
+            timestamp=payload.get("timestamp") or now,
+            severity=payload.get("severity", "medium"),
+            asset_criticality=payload.get("asset_criticality", "medium"),
+            pii_flag=bool(payload.get("pii_flag", False)),
+            user_role=payload.get("user_role", "Standard"),
+            incident_type=payload.get("incident_type", "unknown"),
+            indicators=payload.get("indicators") or [],
+            description=payload.get("description"),
+        )
+
+        logger.info(f"✅ Alert built from payload: {alert_data.alert_id}")
+        return WorkflowState(alert_data=alert_data, retry_count=0)

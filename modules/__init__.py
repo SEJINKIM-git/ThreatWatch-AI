@@ -9,7 +9,10 @@ from .normalizer import PayloadNormalizer
 from .scenario_switch import ScenarioSwitcher
 from .decision_router import DecisionRouter
 from .email_notifier import EmailNotifier
-from .sheets_logger import GoogleSheetsLogger
+try:
+    from .sheets_logger import GoogleSheetsLogger
+except ImportError:  # Lambda 환경에는 gspread를 번들하지 않습니다
+    GoogleSheetsLogger = None
 from .s3_logger import S3AuditLogger
 
 __all__ = [
