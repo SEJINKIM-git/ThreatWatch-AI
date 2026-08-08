@@ -41,8 +41,13 @@ class AIAnalyzer:
             )
             
             # 응답 파싱
-            response_text = message.content[0].text
-            
+            # 응답 파싱 - thinking 블록이 섞일 수 있으므로 타입으로 찾습니다
+            response_text = "".join(
+                block.text for block in message.content
+                if getattr(block, "type", None) == "text"
+            )
+            if not response_text:
+                raise ValueError("no text block in response")
             # JSON 추출
             cleaned = response_text.replace('```json', '').replace('```', '').strip()
             ai_result = json.loads(cleaned)
