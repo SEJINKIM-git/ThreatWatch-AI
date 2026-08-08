@@ -38,7 +38,7 @@ variable "lambda_timeout_sec" {
 variable "lambda_reserved_concurrency" {
   description = "예약 동시성. LLM 호출 폭주로 인한 비용 사고를 막습니다."
   type        = number
-  default     = 5
+  default     = -1
 }
 
 variable "lambda_package_path" {
@@ -80,7 +80,7 @@ variable "sqs_batch_size" {
 variable "api_throttle_rate" {
   description = "초당 요청 수 제한"
   type        = number
-  default     = 5
+  default     = -1
 }
 
 variable "api_throttle_burst" {
