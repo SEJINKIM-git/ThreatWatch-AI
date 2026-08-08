@@ -1,0 +1,9 @@
+// 복사해서 terraform.tfvars로 저장하세요. (terraform.tfvars는 gitignore 대상)
+//   cp terraform.tfvars.example terraform.tfvars
+
+alert_email = "you@example.com"
+
+// 필요하면 기본값을 덮어쓰세요.
+// aws_region      = "ap-northeast-2"
+// demo_mode       = false
+// api_quota_per_day = 1000

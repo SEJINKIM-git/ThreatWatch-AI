@@ -1,0 +1,15 @@
+// 복사해서 backend.hcl로 저장하고 계정 ID를 채우세요. (backend.hcl은 gitignore 대상)
+//   cp backend.hcl.example backend.hcl
+//   terraform init -backend-config=backend.hcl
+//
+// 계정 ID를 저장소에 남기지 않기 위해 백엔드 설정을 파일로 분리합니다.
+
+bucket = "threatwatch-tfstate-000000000000"
+key    = "threatwatch/terraform.tfstate"
+region = "ap-northeast-2"
+
+encrypt = true
+
+// S3 네이티브 락. 별도 DynamoDB 락 테이블이 필요하지 않습니다.
+// Terraform 1.10 미만이면 이 줄을 지우고 dynamodb_table을 사용하세요.
+use_lockfile = true
