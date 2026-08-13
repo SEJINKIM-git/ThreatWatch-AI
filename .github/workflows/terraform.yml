@@ -1,0 +1,129 @@
+name: Terraform
+
+on:
+  pull_request:
+    paths:
+      - "terraform/**"
+      - "modules/**"
+      - "lambda_handler.py"
+      - "config.py"
+      - "models.py"
+      - "scenarios.py"
+      - "requirements.txt"
+      - "build.sh"
+      - ".github/workflows/terraform.yml"
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - "modules/**"
+      - "lambda_handler.py"
+      - "config.py"
+      - "models.py"
+      - "scenarios.py"
+      - "requirements.txt"
+      - "build.sh"
+      - ".github/workflows/terraform.yml"
+  workflow_dispatch:
+
+# OIDC 토큰 발급에 필요합니다. 액세스 키를 쓰지 않는 대가로 이 권한이 필요합니다.
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  AWS_REGION: ap-northeast-2
+  TF_VERSION: "1.15.8"
+
+# 동시 실행을 막습니다. 상태 파일 락 충돌을 예방합니다.
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Lambda 배포 패키지를 먼저 만듭니다.
+      # compute.tf가 filebase64sha256으로 zip을 읽으므로
+      # 파일이 없으면 plan 단계에서 실패합니다.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build Lambda package
+        run: |
+          chmod +x build.sh
+          ./build.sh
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform fmt check
+        working-directory: terraform
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init
+        working-directory: terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=threatwatch/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true"
+
+      - name: Terraform validate
+        working-directory: terraform
+        run: terraform validate
+
+      - name: Terraform plan
+        id: plan
+        working-directory: terraform
+        run: |
+          terraform plan -no-color -input=false -out=tfplan \
+            -var="alert_email=${{ secrets.ALERT_EMAIL }}" \
+            -var="github_repo=${{ github.repository }}" \
+            | tee plan.txt
+          echo "exitcode=$?" >> "$GITHUB_OUTPUT"
+
+      # PR에 plan 결과를 코멘트로 남깁니다.
+      # 리뷰어가 무엇이 바뀌는지 보고 판단할 수 있게 합니다.
+      - name: Comment plan on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let plan = fs.readFileSync('terraform/plan.txt', 'utf8');
+
+            // GitHub 코멘트 길이 제한(65536)을 넘으면 잘라냅니다.
+            const limit = 60000;
+            if (plan.length > limit) {
+              plan = plan.slice(-limit) + '\n\n... (출력이 잘렸습니다. Actions 로그를 확인하세요)';
+            }
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `#### Terraform Plan\n\n<details><summary>결과 보기</summary>\n\n\`\`\`terraform\n${plan}\n\`\`\`\n\n</details>`
+            });
+
+      # main 브랜치에만 적용합니다.
+      # PR 단계에서는 plan만 돌아가므로 리뷰 없이 인프라가 바뀌지 않습니다.
+      - name: Terraform apply
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        working-directory: terraform
+        run: terraform apply -auto-approve -input=false tfplan

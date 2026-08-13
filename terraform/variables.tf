@@ -112,3 +112,9 @@ variable "demo_mode" {
   type        = bool
   default     = false
 }
+
+variable "github_repo" {
+  description = "OIDC 신뢰 대상 저장소 (owner/repo 형식)"
+  type        = string
+  default     = "SEJINKIM-git/ThreatWatch-AI"
+}
