@@ -80,7 +80,7 @@ variable "sqs_batch_size" {
 variable "api_throttle_rate" {
   description = "초당 요청 수 제한"
   type        = number
-  default     = -1
+  default     = 5
 }
 
 variable "api_throttle_burst" {
