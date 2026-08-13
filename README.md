@@ -18,6 +18,7 @@ This repository now reflects the actual project structure behind the ThreatWatch
 ├── main.py                        # Python workflow runner (local demo path)
 ├── lambda_handler.py              # AWS Lambda entry point (SQS event source)
 ├── build.sh                       # Lambda deployment package build (arm64 / py3.12)
+├── seed_alerts.sh                 # sends sample alerts through the API (seeds Athena demo data)
 ├── config.py                      # environment-based configuration
 ├── models.py                      # shared workflow data models
 ├── scenarios.py                   # deterministic scenario library
@@ -37,6 +38,21 @@ This repository now reflects the actual project structure behind the ThreatWatch
 │   ├── sheets_logger.py
 │   ├── dynamo_logger.py           # DynamoDB case store (idempotent writes)
 │   └── s3_logger.py
+├── terraform/                     # Infrastructure as Code (see section below)
+│   ├── versions.tf                # provider config, S3 backend, default tags, locals
+│   ├── variables.tf               # input variables and defaults
+│   ├── storage.tf                 # S3 audit bucket (encryption, lifecycle), DynamoDB table
+│   ├── messaging.tf               # SQS main queue + DLQ, SNS escalation topic
+│   ├── iam.tf                     # least-privilege roles for Lambda / API Gateway / Glue
+│   ├── compute.tf                 # Lambda function, log group, SQS event source mapping
+│   ├── api.tf                     # API Gateway REST API, SQS integration, schema model, usage plan
+│   ├── analytics.tf               # Glue catalog database + crawler, Athena workgroup
+│   ├── monitoring.tf              # ops SNS topic, CloudWatch alarms
+│   ├── cicd.tf                    # GitHub OIDC provider, deploy role
+│   └── outputs.tf                 # endpoint and resource identifier outputs
+├── .github/
+│   └── workflows/
+│       └── terraform.yml          # CI/CD: fmt → validate → plan (PR) → apply (main)
 └── requirements.txt               # Python dependencies
 ```
 
@@ -117,14 +133,22 @@ The backend is being migrated to AWS in phases:
   - Gateway-level JSON Schema request validation (`AlertRequest` model) — missing required fields and invalid enum values are rejected with `400` before reaching the queue
   - API key required, Usage Plan: 5 req/s, burst 10, 1,000 requests/day
   - SQS main queue + DLQ (`maxReceiveCount` 3), visibility timeout 360s (6× the Lambda timeout)
-  - Lambda: Python 3.12 / arm64 / 512 MB / 60s, SQS event source mapping with batch size 5 and `ReportBatchItemFailures`, reserved concurrency 5
+  - Lambda: Python 3.12 / arm64 / 512 MB / 60s, SQS event source mapping with batch size 5 and `ReportBatchItemFailures`, reserved concurrency 5 (later unset — see Phase 3 decision 7)
   - DynamoDB `threatwatch-cases`: partition key `alert_id`, GSI `risk-level-index` (`risk_level` HASH + `created_at` RANGE), on-demand billing
   - SNS topic `threatwatch-escalations` replaces SMTP email delivery in the production path
   - S3 audit logging kept with the same `cases/dt=YYYY-MM-DD/{alert_id}.json` partition layout
   - Separate least-privilege IAM roles for EC2, Lambda, and API Gateway — e.g. the API Gateway role holds only `sqs:SendMessage` on the specific queue
-- **Phase 3 — Data engineering layer** · Planned
-  - Glue Crawler + Athena, Terraform IaC, GitHub Actions CI/CD, CloudWatch
+- **Phase 3 — Data engineering + IaC + CI/CD** · Complete
+  - Terraform IaC for the entire stack under [`terraform/`](terraform/) — S3 state backend with versioning and native lockfile locking (`use_lockfile = true`, Terraform 1.10+; no separate DynamoDB lock table)
+  - `backend.hcl` and `terraform.tfvars` carry the account ID and email, so they are gitignored; `.example` files document the format
+  - Glue Crawler over `s3://<audit-bucket>/cases/` — 10 columns inferred, `dt` recognized as a partition key; `WHERE dt = '...'` prunes the scan to a single folder, which caps Athena scan cost
+  - Athena workgroup with an enforced result location, SSE-S3 encryption, and a 1 GB per-query scan cap
+  - GitHub Actions CI/CD with OIDC — short-lived tokens instead of access keys in GitHub Secrets; PRs run `fmt -check` → `validate` → `plan` (posted as a PR comment), pushes to `main` additionally `apply`
+  - Six CloudWatch operational alarms delivered to a dedicated ops SNS topic (see the Monitoring section)
+- **Phase 4 — Hardening & orchestration** · Planned
   - Step Functions-based HITL approval path
+  - Lambda Authorizer + HMAC signature validation (v2 authentication)
+  - Evaluation of Amazon Bedrock for the LLM assessment step
 
 Key design decisions in Phase 2:
 
@@ -134,6 +158,139 @@ Key design decisions in Phase 2:
 4. **LLM failure propagation** — outside `DEMO_MODE`, an LLM error raises instead of writing a fallback assessment. A fallback would store a P1 incident as P2 and notify at that lower level.
 5. **Scenario overrides stay demo-only** — the Lambda path does not call `scenario_switch`; forced scenario overrides would overwrite the LLM verdict on real alerts. The local `main.py` demo path keeps them.
 6. **IAM role separation** — EC2, Lambda, and API Gateway each have their own role, scoped to the minimum actions and resources they need.
+
+Key design decisions in Phase 3:
+
+1. **Secrets stay out of IaC** — managing the Anthropic API key as an `aws_ssm_parameter` would record its plaintext value in the Terraform state file, and the state lives in S3, so anyone able to read the state could read the key. The parameter is managed manually via the CLI and Terraform only references its path. On top of that, the CI deploy role carries an explicit `Deny` on `ssm:GetParameter*` for the `/threatwatch/*` path, so CI can never read the secret.
+2. **Import vs. recreate** — only the audit bucket was brought in with `terraform import`; everything else was deleted and recreated. The bucket holds the data Athena reads, so it had to be preserved; the rest is just state that was cheap to rebuild. Confirming that a single `terraform apply` reproduces the whole stack was more valuable than matching every attribute by hand through imports.
+3. **Explicit log groups** — if Lambda is left to auto-create its log group, retention defaults to "never expire" and log costs accumulate indefinitely. An `aws_cloudwatch_log_group` resource pins retention to 14 days.
+4. **`treat_missing_data = "notBreaching"`** — SQS reports no metric data when there are no messages. Without this setting, the DLQ alarm would sit in `INSUFFICIENT_DATA` and never fire.
+5. **Separate ops alarm topic** — security escalations and system-failure alerts differ in nature and may have different recipients, so operational alarms publish to their own SNS topic instead of reusing `threatwatch-escalations`.
+6. **API response mapping** — left at defaults, the raw SQS XML response is exposed to the client. An integration response template returns consistent JSON instead, and the status code is **202**, not 200: the request has only been accepted — triage has not finished yet.
+7. **No reserved concurrency (for now)** — new AWS accounts have a concurrent-execution limit of 10. Reserving 5 would drop unreserved capacity below the minimum of 10, which the API rejects. The low account limit already provides the runaway protection, and the reservation will be restored after a limit increase.
+
+## Infrastructure as Code
+
+All AWS resources are defined in [`terraform/`](terraform/). State is stored in a versioned S3 bucket and locked with Terraform's native S3 lockfile (`use_lockfile = true`, Terraform 1.10+), so no DynamoDB lock table is needed.
+
+### Prerequisites (one-time, outside Terraform)
+
+- Create the state bucket manually — the bucket that stores Terraform state cannot be managed by the state it stores, so this bootstrap step stays outside Terraform:
+
+  ```bash
+  aws s3api create-bucket --bucket <state-bucket> \
+    --create-bucket-configuration LocationConstraint=ap-northeast-2
+  aws s3api put-bucket-versioning --bucket <state-bucket> \
+    --versioning-configuration Status=Enabled
+  ```
+
+- Register the Anthropic API key in SSM Parameter Store (never through Terraform — see Phase 3 decision 1):
+
+  ```bash
+  aws ssm put-parameter --name /threatwatch/anthropic-api-key \
+    --type SecureString --value <key>
+  ```
+
+### Configure and apply
+
+`backend.hcl` and `terraform.tfvars` contain the account-specific values and are gitignored; copy them from the `.example` files and fill them in:
+
+```bash
+cd terraform
+cp backend.hcl.example backend.hcl           # state bucket name, key, region
+cp terraform.tfvars.example terraform.tfvars # alert_email (and any overrides)
+```
+
+Build the Lambda package first — `compute.tf` reads the zip with `filebase64sha256`, so `plan` fails if it is missing — then run the standard flow:
+
+```bash
+./build.sh   # from the repository root
+cd terraform
+terraform init -backend-config=backend.hcl
+terraform plan
+terraform apply
+```
+
+### Outputs
+
+`terraform output` replaces the manually maintained `.env.aws`. To inject the endpoints and resource identifiers into your shell:
+
+```bash
+eval "$(terraform output -raw env_exports)"
+```
+
+This exports `API_URL`, `QUEUE_URL`, `DLQ_URL`, `TABLE_NAME`, `TOPIC_ARN`, `S3_AUDIT_BUCKET`, `KEY_ID`, and friends. The API key value itself is intentionally not an output (outputs land in the state file); fetch it on demand with `aws apigateway get-api-key --api-key $KEY_ID --include-value`.
+
+## CI/CD
+
+[`terraform.yml`](.github/workflows/terraform.yml) runs on changes to `terraform/**`, the Lambda source files (`modules/**`, `lambda_handler.py`, `config.py`, `models.py`, `scenarios.py`, `requirements.txt`, `build.sh`), or the workflow itself. Documentation-only changes (like this README) do not trigger it.
+
+- **Pull requests** — build the Lambda package, then `terraform fmt -check` → `init` → `validate` → `plan`. The plan output is posted as a PR comment so the reviewer sees exactly what would change. Nothing is applied from a PR.
+- **Push to `main`** — the same steps, followed by `terraform apply`.
+
+Authentication uses GitHub's OIDC provider instead of access keys stored in GitHub Secrets: the workflow exchanges a short-lived GitHub-issued token for the deploy role, so there is no long-lived credential to leak. The role's trust policy restricts `token.actions.githubusercontent.com:sub` to this specific repository — without that condition, any GitHub repository could assume the role.
+
+Required GitHub Secrets:
+
+| Secret | Purpose |
+| --- | --- |
+| `AWS_DEPLOY_ROLE_ARN` | IAM role the workflow assumes via OIDC |
+| `TF_STATE_BUCKET` | S3 bucket holding the Terraform state |
+| `ALERT_EMAIL` | passed to Terraform as the alarm/escalation subscription address |
+
+## Analytics
+
+A Glue Crawler infers the schema of the S3 audit logs (`cases/dt=YYYY-MM-DD/*.json`) into the `threatwatch` Glue database as the `cases` table, with `dt` as a partition key. Run it after seeding data or when new date partitions appear:
+
+```bash
+aws glue start-crawler --name threatwatch-cases-crawler
+```
+
+`./seed_alerts.sh` sends ten sample alerts through the real API path to generate queryable data.
+
+Queries run in the `threatwatch` Athena workgroup, which enforces the result location, SSE-S3 encryption, and a 1 GB per-query scan cap. Because the data is Hive-partitioned by `dt`, adding `WHERE dt = 'YYYY-MM-DD'` scans only that day's folder.
+
+Risk-level distribution:
+
+```sql
+SELECT risk_level, COUNT(*) AS cases
+FROM threatwatch.cases
+GROUP BY risk_level
+ORDER BY cases DESC;
+```
+
+Highest risk score per incident type:
+
+```sql
+SELECT incident_type, MAX(risk_score) AS max_score, COUNT(*) AS cases
+FROM threatwatch.cases
+GROUP BY incident_type
+ORDER BY max_score DESC;
+```
+
+Low-confidence cases worth a human look:
+
+```sql
+SELECT alert_id, incident_type, risk_level, risk_score, confidence
+FROM threatwatch.cases
+WHERE confidence < 0.7
+ORDER BY confidence ASC;
+```
+
+> **Note on `missing_data_count`** — despite the name, this is *not* the number of missing fields detected by the `precheck` module. It is the number of additional data items the LLM said it would need for a more confident judgment — the length of `ai_result.missing_data_list`. Keep that in mind when interpreting query results.
+
+## Monitoring
+
+Six CloudWatch alarms publish to a dedicated ops SNS topic, kept separate from the security escalation topic (different audience, different urgency):
+
+| Alarm | Threshold | What it means |
+| --- | --- | --- |
+| DLQ not empty | > 0 messages | An alert failed processing even after 3 retries — a potentially missed incident |
+| Lambda errors | > 2 in 5 min | Code or external-dependency failures |
+| Lambda throttles | > 0 | Concurrency limit reached — a capacity problem, distinct from errors |
+| Queue backlog | avg > 50 over 2 periods | Processing is not keeping up with intake |
+| API 5xx | > 0 | A failure in the gateway or the SQS integration itself |
+| API 4xx | > 20 in 5 min | Schema-validation rejections are normal, so the threshold is high — this only catches misuse patterns |
 
 ## Local Run
 
@@ -219,13 +376,13 @@ curl -X POST "https://{api-id}.execute-api.{region}.amazonaws.com/prod/alerts" \
 
 Responses:
 
-- `200` — accepted and enqueued to SQS (processing is asynchronous)
+- `202` — accepted and enqueued to SQS; processing is asynchronous, so the response confirms receipt, not a completed triage (a mapped JSON body is returned instead of the raw SQS XML)
 - `400` — request body failed gateway-level JSON Schema validation
 - `403` — missing or invalid API key
 
 ## Deployment
 
-Build the Lambda package and update the function:
+Infrastructure and Lambda code deploy through Terraform — locally via `terraform apply` (see Infrastructure as Code) or automatically on pushes to `main` (see CI/CD). For an ad-hoc code-only update without a Terraform run, build the package and update the function directly:
 
 ```bash
 ./build.sh
