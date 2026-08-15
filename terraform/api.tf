@@ -96,7 +96,8 @@ resource "aws_api_gateway_method" "post_alerts" {
   rest_api_id   = aws_api_gateway_rest_api.main.id
   resource_id   = aws_api_gateway_resource.alerts.id
   http_method   = "POST"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.hmac.id
 
   # v1 인증은 API 키입니다. 키는 헤더에 평문으로 실리고 본문 무결성을 보장하지 않으므로
   # AWS도 이를 인증 수단이 아닌 사용량 식별자로 규정합니다.
@@ -189,6 +190,7 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_integration_response.accepted,
       aws_api_gateway_model.alert_request,
       aws_api_gateway_request_validator.body,
+      aws_api_gateway_authorizer.hmac,
     ]))
   }
 

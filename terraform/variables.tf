@@ -118,3 +118,9 @@ variable "github_repo" {
   type        = string
   default     = "SEJINKIM-git/ThreatWatch-AI"
 }
+
+variable "hmac_secret_ssm_path" {
+  description = "HMAC 공유 시크릿의 SSM 경로. 파라미터 자체는 CLI로 관리합니다."
+  type        = string
+  default     = "/threatwatch/hmac-secret"
+}
