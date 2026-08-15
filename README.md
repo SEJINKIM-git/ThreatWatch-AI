@@ -17,8 +17,10 @@ This repository now reflects the actual project structure behind the ThreatWatch
 ├── BPMN Red Box Flow.png          # red-box BPMN diagram
 ├── main.py                        # Python workflow runner (local demo path)
 ├── lambda_handler.py              # AWS Lambda entry point (SQS event source)
+├── authorizer.py                  # API Gateway Lambda authorizer (HMAC signature validation)
 ├── build.sh                       # Lambda deployment package build (arm64 / py3.12)
 ├── seed_alerts.sh                 # sends sample alerts through the API (seeds Athena demo data)
+├── send_signed.py                 # CLI for sending HMAC-signed requests (tests the reject paths too)
 ├── config.py                      # environment-based configuration
 ├── models.py                      # shared workflow data models
 ├── scenarios.py                   # deterministic scenario library
@@ -46,6 +48,7 @@ This repository now reflects the actual project structure behind the ThreatWatch
 │   ├── iam.tf                     # least-privilege roles for Lambda / API Gateway / Glue
 │   ├── compute.tf                 # Lambda function, log group, SQS event source mapping
 │   ├── api.tf                     # API Gateway REST API, SQS integration, schema model, usage plan
+│   ├── auth.tf                    # HMAC authorizer: Lambda, nonce table, API Gateway authorizer
 │   ├── analytics.tf               # Glue catalog database + crawler, Athena workgroup
 │   ├── monitoring.tf              # ops SNS topic, CloudWatch alarms
 │   ├── cicd.tf                    # GitHub OIDC provider, deploy role
@@ -101,7 +104,7 @@ Real alerts are processed by a serverless pipeline on AWS:
 
 ```text
 POST /alerts
-  → API Gateway (REST, API key + JSON Schema validation)
+  → API Gateway (REST, API key + HMAC signature + JSON Schema validation)
   → SQS (main queue, DLQ after 3 failed receives)
   → Lambda (lambda_handler.py: build → precheck → LLM assessment → normalize)
   → DynamoDB (idempotent case store)
@@ -110,7 +113,7 @@ POST /alerts
 
 Step by step:
 
-1. A client sends `POST /alerts` with an API key. API Gateway validates the request body against a JSON Schema model (`AlertRequest`) at the gateway level — missing required fields or invalid enum values are rejected with `400` before touching any compute.
+1. A client sends `POST /alerts` with an API key and three HMAC signature headers (see the Authentication section). A Lambda authorizer verifies the signature, timestamp freshness, and nonce uniqueness; API Gateway then validates the request body against a JSON Schema model (`AlertRequest`) at the gateway level — missing required fields or invalid enum values are rejected with `400` before touching the queue.
 2. The gateway writes the message directly to SQS through a VTL mapping template (no Lambda in the ingestion path).
 3. Lambda consumes the queue via an event source mapping (batch size 5) and runs the same triage pipeline as the local engine: alert build → data pre-check → LLM risk assessment → payload normalization.
 4. The case is written to DynamoDB with a conditional write, logged to the S3 audit bucket, and — if the risk level warrants escalation — published to an SNS topic.
@@ -145,10 +148,14 @@ The backend is being migrated to AWS in phases:
   - Athena workgroup with an enforced result location, SSE-S3 encryption, and a 1 GB per-query scan cap
   - GitHub Actions CI/CD with OIDC — short-lived tokens instead of access keys in GitHub Secrets; PRs run `fmt -check` → `validate` → `plan` (posted as a PR comment), pushes to `main` additionally `apply`
   - Six CloudWatch operational alarms delivered to a dedicated ops SNS topic (see the Monitoring section)
-- **Phase 4 — Hardening & orchestration** · Planned
-  - Step Functions-based HITL approval path
-  - Lambda Authorizer + HMAC signature validation (v2 authentication)
-  - Evaluation of Amazon Bedrock for the LLM assessment step
+- **Phase 4 — Hardening & orchestration** · In progress
+  - **HMAC request signature validation (v2 authentication)** · Complete
+    - Lambda authorizer (`authorizer.py`, REQUEST type) verifies an HMAC-SHA256 signature over `"{timestamp}.{nonce}"`, carried in three `x-tw-*` headers
+    - Replay protection: ±300s timestamp window plus single-use nonces, consumed with a DynamoDB conditional write and expired automatically via TTL
+    - API keys are kept alongside HMAC — the key identifies the caller for Usage Plan quotas, the signature proves authenticity and freshness (see the Authentication section)
+    - New resources in [`terraform/auth.tf`](terraform/auth.tf): nonce DynamoDB table, authorizer Lambda (python3.12 / arm64 / 256 MB / 5s), two least-privilege IAM roles (execution + API Gateway invoke), the REQUEST authorizer with result caching disabled, and a 14-day log group
+  - Step Functions-based HITL approval path · Planned
+  - Evaluation of Amazon Bedrock for the LLM assessment step · Planned
 
 Key design decisions in Phase 2:
 
@@ -168,6 +175,16 @@ Key design decisions in Phase 3:
 5. **Separate ops alarm topic** — security escalations and system-failure alerts differ in nature and may have different recipients, so operational alarms publish to their own SNS topic instead of reusing `threatwatch-escalations`.
 6. **API response mapping** — left at defaults, the raw SQS XML response is exposed to the client. An integration response template returns consistent JSON instead, and the status code is **202**, not 200: the request has only been accepted — triage has not finished yet.
 7. **No reserved concurrency (for now)** — new AWS accounts have a concurrent-execution limit of 10. Reserving 5 would drop unreserved capacity below the minimum of 10, which the API rejects. The low account limit already provides the runaway protection, and the reservation will be restored after a limit increase.
+
+Key design decisions in Phase 4 (HMAC authentication):
+
+1. **The request body is not signed — an explicit, accepted limitation.** A REQUEST-type authorizer on a REST API never receives the request body; only headers and the query string are available. This layer therefore provides sender authentication and replay protection, but **not body integrity**. Defense against body tampering relies on HTTPS in transit and the gateway's JSON Schema validation for shape enforcement. Signing the body would require giving up the direct SQS integration and putting a Lambda at the entry point — paying compute on every ingest and losing the queue's buffering. That trade-off was considered and declined.
+2. **API key and HMAC serve different roles.** The API key was not removed: it is tied to the Usage Plan and handles usage tracking and quotas, while HMAC handles authenticity and freshness. AWS documentation itself positions API keys as usage identifiers, not an authentication mechanism.
+3. **`authorizer_result_ttl_in_seconds = 0`.** Caching authorizer results would defeat replay protection — a cached Allow policy lets the same signature through repeatedly while it lives. Since the nonce changes on every request, the cache hit rate would be effectively zero anyway.
+4. **`hmac.compare_digest` for signature comparison.** Comparing signatures with `==` takes time proportional to the length of the matching prefix, which lets a timing attack guess the signature one byte at a time. A constant-time comparison is required.
+5. **No failure reasons in responses.** Distinguishing an expired timestamp from a signature mismatch from a reused nonce would hand an attacker useful information. Every verification failure returns the same Deny policy; the specific reason is logged to CloudWatch only.
+6. **Nonce TTL.** Requests outside the allowed time window are already rejected by the timestamp check, so a nonce only needs to be kept until `timestamp + 300 + 60`. DynamoDB TTL deletes expired items automatically — no cleanup job needed.
+7. **The secret stays out of IaC.** The shared HMAC secret follows the same principle as the Anthropic API key (Phase 3 decision 1): managing it as an `aws_ssm_parameter` would record its plaintext in the state file, so `/threatwatch/hmac-secret` is registered manually via the CLI and Terraform only references the path.
 
 ## Infrastructure as Code
 
@@ -246,7 +263,7 @@ A Glue Crawler infers the schema of the S3 audit logs (`cases/dt=YYYY-MM-DD/*.js
 aws glue start-crawler --name threatwatch-cases-crawler
 ```
 
-`./seed_alerts.sh` sends ten sample alerts through the real API path to generate queryable data.
+`./seed_alerts.sh` sends ten sample alerts through the real API path to generate queryable data. Each alert is signed with a fresh nonce, so the script needs `HMAC_SECRET` exported (see Environment Setup).
 
 Queries run in the `threatwatch` Athena workgroup, which enforces the result location, SSE-S3 encryption, and a 1 GB per-query scan cap. Because the data is Hive-partitioned by `dt`, adding `WHERE dt = 'YYYY-MM-DD'` scans only that day's folder.
 
@@ -337,6 +354,68 @@ The Lambda function is configured through function environment variables instead
 - `S3_AUDIT_BUCKET` — audit log bucket
 - `DEMO_MODE` — must be unset/false in production so LLM failures propagate
 
+### HMAC signing secret (one-time)
+
+The authorizer reads the shared signing secret from SSM Parameter Store (`/threatwatch/hmac-secret`). Like the Anthropic API key, it is registered manually via the CLI — never through Terraform — so its plaintext stays out of the state file (Phase 3 decision 1, Phase 4 decision 7). Route the value through a temporary file rather than the command line, so the secret never lands in shell history:
+
+```bash
+umask 077
+python3 -c "import secrets; print(secrets.token_hex(32), end='')" > hmac-secret.tmp
+aws ssm put-parameter --name /threatwatch/hmac-secret \
+  --type SecureString --value file://hmac-secret.tmp
+rm hmac-secret.tmp
+```
+
+Clients (`send_signed.py`, `seed_alerts.sh`) expect the same value in the `HMAC_SECRET` environment variable.
+
+## Authentication
+
+`POST /alerts` is protected by two independent layers with distinct responsibilities:
+
+| Layer | Carried in | Responsibility |
+| --- | --- | --- |
+| API key | `x-api-key` header | caller identification for the Usage Plan — rate limits and quotas |
+| HMAC signature | three `x-tw-*` headers | request authenticity and freshness (replay protection) |
+
+The API key alone is not an authentication mechanism — it travels in plaintext headers and says nothing about whether a request is genuine or fresh. AWS positions API keys as usage identifiers. The HMAC layer is what actually authenticates the sender.
+
+### Signature format
+
+The string to sign is `"{timestamp}.{nonce}"`, and the signature is its HMAC-SHA256 under the shared secret, hex-encoded:
+
+| Header | Value |
+| --- | --- |
+| `x-tw-timestamp` | Unix epoch seconds |
+| `x-tw-nonce` | a value unique to this request |
+| `x-tw-signature` | hex of `HMAC-SHA256(secret, "{timestamp}.{nonce}")` |
+
+A Lambda authorizer (REQUEST type, [`authorizer.py`](authorizer.py)) checks, in order: all three headers are present, the timestamp is within ±300 seconds of the current time, the recomputed signature matches (constant-time comparison), and the nonce has never been seen before — consumed with a DynamoDB conditional write, so even two concurrent requests with the same nonce admit only one.
+
+Client-side signing takes a few lines:
+
+```python
+import hashlib, hmac, os, secrets, time
+
+timestamp = str(int(time.time()))
+nonce = secrets.token_hex(16)
+signature = hmac.new(os.environ["HMAC_SECRET"].encode(),
+                     f"{timestamp}.{nonce}".encode(), hashlib.sha256).hexdigest()
+# send as x-tw-timestamp / x-tw-nonce / x-tw-signature
+```
+
+### Response codes
+
+- `202` — accepted and enqueued
+- `400` — request body failed gateway-level JSON Schema validation
+- `401` — signature headers missing (no authentication was attempted)
+- `403` — signature, timestamp, or nonce verification failed; also returned for a missing or invalid API key
+
+All verification failures return the same undifferentiated `403` — the specific reason is deliberately kept out of the response and logged to CloudWatch only.
+
+### What the signature does *not* cover
+
+The request body is **not** part of the signed string, and this is a known limitation, not an oversight. REST API REQUEST-type authorizers do not receive the request body — only headers and the query string. This layer therefore guarantees who sent the request and that it is not a replay, but **it does not guarantee body integrity**. Protection against body tampering rests on HTTPS for the transport path and on the gateway's JSON Schema validation for shape enforcement. Signing the body would require replacing the direct SQS integration with a Lambda entry point, adding compute cost to every ingest and losing the queue's buffering — a trade-off this design consciously declined (Phase 4 decision 1).
+
 ## API Usage
 
 Real alerts enter the pipeline through the API Gateway endpoint. The endpoint URL and API key are not published; the URL has the form:
@@ -351,6 +430,9 @@ Example request:
 curl -X POST "https://{api-id}.execute-api.{region}.amazonaws.com/prod/alerts" \
   -H "Content-Type: application/json" \
   -H "x-api-key: {your-api-key}" \
+  -H "x-tw-timestamp: {epoch-seconds}" \
+  -H "x-tw-nonce: {unique-nonce}" \
+  -H "x-tw-signature: {hmac-sha256-hex}" \
   -d '{
     "incident_type": "credential_stuffing_admin_compromise",
     "severity": "high",
@@ -378,7 +460,21 @@ Responses:
 
 - `202` — accepted and enqueued to SQS; processing is asynchronous, so the response confirms receipt, not a completed triage (a mapped JSON body is returned instead of the raw SQS XML)
 - `400` — request body failed gateway-level JSON Schema validation
-- `403` — missing or invalid API key
+- `401` — HMAC signature headers missing (see Authentication)
+- `403` — signature, timestamp, or nonce verification failed, or missing/invalid API key
+
+Assembling the signature headers by hand is error-prone — [`send_signed.py`](send_signed.py) does it for you (see Testing).
+
+## Testing
+
+[`send_signed.py`](send_signed.py) exercises the accept path and every reject path of the authentication layer. It reads `API_URL`, `API_KEY`, and `HMAC_SECRET` from the environment:
+
+| Scenario | Command | Expected |
+| --- | --- | --- |
+| Valid signed request | `python send_signed.py '<json-body>'` | `202` |
+| Replay — same nonce sent twice | `python send_signed.py --replay '<json-body>'` | `202`, then `403` |
+| Timestamp outside the ±300s window | `python send_signed.py --skew 600 '<json-body>'` | `403` |
+| Signature headers omitted | `python send_signed.py --no-sign '<json-body>'` | `401` |
 
 ## Deployment
 
