@@ -5,12 +5,14 @@
 #
 # 사용법:
 #   source .env.aws
+#   export HMAC_SECRET=...   # 공유 서명 시크릿 (README의 Environment Setup 참고)
 #   ./seed_alerts.sh
 
 set -euo pipefail
 
 : "${API_URL:?API_URL not set - run 'source .env.aws' first}"
 : "${KEY_ID:?KEY_ID not set}"
+: "${HMAC_SECRET:?HMAC_SECRET not set - export the shared signing secret (see README, Environment Setup)}"
 
 API_KEY=$(aws apigateway get-api-key --api-key "$KEY_ID" --include-value --query value --output text)
 
@@ -19,10 +21,21 @@ send() {
   local id
   id=$(printf '%s' "$body" | sed -n 's/.*"alert_id":"\([^"]*\)".*/\1/p')
 
+  # 알림마다 새 논스로 서명합니다. 논스는 1회용이라
+  # 재사용하면 두 번째 요청부터 403으로 거부됩니다.
+  local timestamp nonce signature
+  timestamp=$(date +%s)
+  nonce=$(openssl rand -hex 16)
+  signature=$(printf '%s.%s' "$timestamp" "$nonce" \
+    | openssl dgst -sha256 -hmac "$HMAC_SECRET" -hex | sed 's/^.*= //')
+
   local code
   code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$API_URL" \
     -H "x-api-key: $API_KEY" \
     -H "Content-Type: application/json" \
+    -H "x-tw-timestamp: $timestamp" \
+    -H "x-tw-nonce: $nonce" \
+    -H "x-tw-signature: $signature" \
     -d "$body")
 
   printf '%-28s %s\n' "$id" "$code"
