@@ -67,6 +67,7 @@ data "aws_iam_policy_document" "github_deploy" {
       "s3:*",
       "sns:*",
       "sqs:*",
+      "states:*",
     ]
     resources = ["*"]
   }
