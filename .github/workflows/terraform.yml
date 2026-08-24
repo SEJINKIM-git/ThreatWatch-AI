@@ -94,11 +94,11 @@ jobs:
         id: plan
         working-directory: terraform
         run: |
+          set -o pipefail
           terraform plan -no-color -input=false -out=tfplan \
             -var="alert_email=${{ secrets.ALERT_EMAIL }}" \
             -var="github_repo=${{ github.repository }}" \
             | tee plan.txt
-          echo "exitcode=$?" >> "$GITHUB_OUTPUT"
 
       # PR에 plan 결과를 코멘트로 남깁니다.
       # 리뷰어가 무엇이 바뀌는지 보고 판단할 수 있게 합니다.
