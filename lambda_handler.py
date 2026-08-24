@@ -47,6 +47,36 @@ _audit = S3AuditLogger()
 
 REQUIRED_FIELDS = ("incident_type", "severity")
 
+_sfn = None
+
+
+def _start_approval(state) -> None:
+    """
+    P1 케이스를 승인 워크플로로 넘깁니다.
+
+    실행 이름을 alert_id로 고정하면 Step Functions가 중복 실행을 거부하므로
+    DynamoDB 조건부 쓰기에 이은 두 번째 멱등성 장치가 됩니다.
+    """
+    global _sfn
+
+    if _sfn is None:
+        import boto3
+        _sfn = boto3.client("stepfunctions", region_name=os.environ.get("AWS_REGION"))
+
+    p = state.final_payload
+    _sfn.start_execution(
+        stateMachineArn=os.environ["STATE_MACHINE_ARN"],
+        name=p.alert_id[:80],
+        input=json.dumps({
+            "alert_id": p.alert_id,
+            "risk_level": p.risk_level,
+            "risk_score": p.risk_score,
+            "incident_type": p.incident_type,
+            "summary": p.summary,
+            "confidence": float(p.confidence),
+        }),
+    )
+    logger.info(f"⏸️ approval workflow started: {p.alert_id}")
 
 def _parse_body(record: dict) -> dict:
     """SQS 레코드 본문을 dict로 변환합니다."""
@@ -100,8 +130,12 @@ def process_record(record: dict) -> dict:
     # Step 11b - S3 감사 로그
     _audit.log_incident(state)
 
-    # Step 09/10 - 위험도 라우팅 및 알림
-    if _router.should_send_email(state):
+        # Step 09/10 - 위험도 라우팅
+    # P1은 자동 통지로 끝내지 않고 승인 워크플로로 넘깁니다.
+    # 담당자가 격리를 승인하거나 오탐으로 판정할 때까지 케이스가 열려 있습니다.
+    if state.final_payload.risk_level == "P1" and os.environ.get("STATE_MACHINE_ARN"):
+        _start_approval(state)
+    elif _router.should_send_email(state):
         _notifier.send_alert(state)
 
     logger.info(

@@ -345,7 +345,7 @@ resource "aws_sfn_state_machine" "approval" {
         Parameters = {
           FunctionName = aws_lambda_function.approval_request.arn
           Payload = {
-            "case.$"   = "$"
+            "case.$"      = "$"
             "taskToken.$" = "$$.Task.Token"
           }
         }
@@ -366,7 +366,7 @@ resource "aws_sfn_state_machine" "approval" {
       MarkExpired = {
         Type = "Pass"
         Parameters = {
-          "case.$"  = "$"
+          "case.$"   = "$"
           "decision" = "expired"
         }
         Next = "Finalize"

@@ -33,7 +33,6 @@ cp modules/*.py "$BUILD_DIR/modules/"
 echo "==> 불필요한 파일 정리"
 find "$BUILD_DIR" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 find "$BUILD_DIR" -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true
-find "$BUILD_DIR" -type d -name "*.dist-info" -exec rm -rf {} + 2>/dev/null || true
 
 echo "==> 압축"
 (cd "$BUILD_DIR" && zip -qr "../$ZIP_FILE" .)

@@ -29,10 +29,12 @@ resource "aws_lambda_function" "triage" {
 
   environment {
     variables = {
-      TABLE_NAME      = aws_dynamodb_table.cases.name
-      TOPIC_ARN       = aws_sns_topic.escalations.arn
-      S3_AUDIT_BUCKET = aws_s3_bucket.audit.id
-      DEMO_MODE       = tostring(var.demo_mode)
+      TABLE_NAME        = aws_dynamodb_table.cases.name
+      TOPIC_ARN         = aws_sns_topic.escalations.arn
+      S3_AUDIT_BUCKET   = aws_s3_bucket.audit.id
+      DEMO_MODE         = tostring(var.demo_mode)
+      STATE_MACHINE_ARN = aws_sfn_state_machine.approval.arn
+      STATE_MACHINE_ARN = aws_sfn_state_machine.approval.arn
     }
   }
 
@@ -59,3 +61,4 @@ resource "aws_lambda_event_source_mapping" "alerts" {
   # 이미 성공한 건의 LLM 호출 비용이 낭비됩니다.
   function_response_types = ["ReportBatchItemFailures"]
 }
+

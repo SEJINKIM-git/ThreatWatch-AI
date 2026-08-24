@@ -191,6 +191,9 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_model.alert_request,
       aws_api_gateway_request_validator.body,
       aws_api_gateway_authorizer.hmac,
+      aws_api_gateway_resource.approvals,
+      aws_api_gateway_method.get_approvals,
+      aws_api_gateway_integration.approvals,
     ]))
   }
 
@@ -241,3 +244,4 @@ resource "aws_api_gateway_usage_plan_key" "main" {
   key_type      = "API_KEY"
   usage_plan_id = aws_api_gateway_usage_plan.main.id
 }
+

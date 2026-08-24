@@ -124,3 +124,9 @@ variable "hmac_secret_ssm_path" {
   type        = string
   default     = "/threatwatch/hmac-secret"
 }
+
+variable "approval_timeout_sec" {
+  description = "승인 대기 시간(초). 초과하면 미승인으로 처리하고 재통지합니다."
+  type        = number
+  default     = 3600
+}
