@@ -884,7 +884,7 @@ function HeroSection({ mode, status, lastRunMeta, lang }) {
             </p>
 
             <div className="hero-actions">
-              <a className="hero-primary" href="/workspace">{lang === "ko" ? "제품 워크스페이스 실행" : "Run Product Workspace"}</a>
+              <a className="hero-primary" href="/workspace">{lang === "ko" ? "라이브 워크스페이스 열기" : "Open Live Workspace"}</a>
               <a className="hero-secondary" href="#process">{lang === "ko" ? "관제 흐름 보기" : "View Command Flow"}</a>
             </div>
 
@@ -1090,7 +1090,7 @@ function ProcessSection({ activeNode, status, lang }) {
               background: "rgba(142,167,255,0.08)",
             }}
           >
-            {lang === "ko" ? "제품 열기" : "Open Product"}
+            {lang === "ko" ? "라이브 워크스페이스 열기" : "Open Live Workspace"}
           </a>
         }
       />
@@ -2799,9 +2799,9 @@ export default function ThreatWatchDashboard() {
 
         <PageSection id="simulator" tint="rgba(198,143,152,0.24)">
           <NarrativeHeader
-            eyebrow={lang === "ko" ? "제품 워크스페이스" : "Product Workspace"}
-            title={lang === "ko" ? "케이스 트리아지, 라우팅, 증적 기록을 위한 실제 제품 화면." : "A working product surface for case triage, routing, and evidence capture."}
-            description={lang === "ko" ? "제품 워크스페이스는 incident intake, pipeline state, risk output, history를 하나로 묶어 관제팀이 같은 근거로 케이스를 처리하도록 돕습니다." : "The product workspace unifies incident intake, pipeline state, risk output, and history so security teams work from the same evidence."}
+            eyebrow={lang === "ko" ? "시나리오 워크스루" : "Scenario Walkthrough"}
+            title={lang === "ko" ? "케이스 트리아지, 라우팅, 증적 기록을 시나리오로 살펴보는 제품 화면." : "A scenario-driven product surface for case triage, routing, and evidence capture."}
+            description={lang === "ko" ? "이 영역은 incident intake, pipeline state, risk output, history를 하나로 묶어 관제팀이 같은 근거로 케이스를 처리하는 흐름을 보여줍니다. 고정 시나리오 데이터로 동작하며, 실제 AWS 파이프라인 실행은 라이브 워크스페이스에서 확인할 수 있습니다." : "This section unifies incident intake, pipeline state, risk output, and history to show how security teams work from the same evidence. It runs on fixed scenario data; real AWS pipeline runs are available in the Live Workspace."}
           />
 
           {scenarioLoadError ? <NoticeBanner kind="error" text={scenarioLoadError} lang={lang} /> : null}
