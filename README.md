@@ -168,6 +168,10 @@ The backend is being migrated to AWS in phases:
     - New resources in [`terraform/hitl.tf`](terraform/hitl.tf) and [`terraform/api_approvals.tf`](terraform/api_approvals.tf): the state machine with execution logging, three Lambdas (`approval-request`, `approval-callback`, `approval-finalize`; python3.12 / arm64 / 256 MB) each with a least-privilege role and a 14-day log group, an approvals DynamoDB table with TTL, and the `GET /approvals` callback endpoint (`AWS_PROXY` integration, no API key, no authorizer — see the Approval Workflow section for why)
     - The triage Lambda role gains `states:StartExecution` on the state machine, and the function gains a `STATE_MACHINE_ARN` environment variable; when the variable is unset, P1 falls back to the plain SNS path
     - Also fixed along the way: `build.sh` was deleting `*.dist-info` directories, which broke `httpx` at import time (see Known Issues)
+  - **CI pipeline and dependency hardening** · Complete
+    - The CI plan step no longer masks `terraform plan` failures behind the `tee` pipe (`set -o pipefail`), and the deploy role gained the Step Functions permissions it was missing — see the CI/CD section for how these two surfaced together
+    - [`requirements.txt`](requirements.txt) moved from `>=` ranges to exact `==` pins (see Known Issues for why, and for the scope of the pins)
+    - [`seed_alerts.sh`](seed_alerts.sh) now signs every request — it had been rejected with `401` ever since HMAC authentication was introduced; each alert gets a fresh nonce, since the authorizer rejects a reused one
   - Evaluation of Amazon Bedrock for the LLM assessment step · Planned
 
 Key design decisions in Phase 2:
@@ -309,6 +313,8 @@ This exports `API_URL`, `QUEUE_URL`, `DLQ_URL`, `TABLE_NAME`, `TOPIC_ARN`, `S3_A
 
 Authentication uses GitHub's OIDC provider instead of access keys stored in GitHub Secrets: the workflow exchanges a short-lived GitHub-issued token for the deploy role, so there is no long-lived credential to leak. The role's trust policy restricts `token.actions.githubusercontent.com:sub` to this specific repository — without that condition, any GitHub repository could assume the role.
 
+Two pipeline defects were fixed in Phase 4, and the way they surfaced together is worth recording. The plan step pipes its output through `tee` to capture it for the PR comment; without `set -o pipefail`, the step's exit code was `tee`'s, so a failed `plan` still passed and the workflow proceeded to `apply` — which then stopped with `Cannot apply incomplete plan`, a backstop rather than a safe design. Separately, the Phase 4 state machine was added without extending the deploy role's policy in [`terraform/cicd.tf`](terraform/cicd.tf), so Terraform hit `AccessDenied` on `states:DescribeStateMachine`. The first defect hid the second: the permission error only showed up indirectly at the apply stage, and its real cause became visible at the plan stage only once `pipefail` was in place. The plan step now fails fast, and the deploy role covers Step Functions — see Known Issues for the general rule this taught.
+
 Required GitHub Secrets:
 
 | Secret | Purpose |
@@ -325,7 +331,7 @@ A Glue Crawler infers the schema of the S3 audit logs (`cases/dt=YYYY-MM-DD/*.js
 aws glue start-crawler --name threatwatch-cases-crawler
 ```
 
-`./seed_alerts.sh` sends ten sample alerts through the real API path to generate queryable data. Each alert is signed with a fresh nonce, so the script needs `HMAC_SECRET` exported (see Environment Setup).
+`./seed_alerts.sh` sends ten sample alerts through the real API path to generate queryable data. Each alert is signed with a fresh nonce — the authorizer rejects a reused one — so the script needs `HMAC_SECRET` exported (see Environment Setup).
 
 Queries run in the `threatwatch` Athena workgroup, which enforces the result location, SSE-S3 encryption, and a 1 GB per-query scan cap. Because the data is Hive-partitioned by `dt`, adding `WHERE dt = 'YYYY-MM-DD'` scans only that day's folder.
 
@@ -578,10 +584,12 @@ This repository is organized to reflect that exact split:
 - **workflow logic reference / execution engine** lives in the root Python code
 - **production alert processing** runs on the AWS serverless pipeline (`lambda_handler.py`)
 
-## Known Issues
+## Operational Notes & Known Issues
 
-- **Dependencies are not pinned.** [`requirements.txt`](requirements.txt) uses `>=` ranges, so every build may install different dependency versions. This is why the `dist-info` bug below surfaced late — the code that trips over missing metadata only arrived with a newer transitive version. Pinning exact versions (or adding a lock file) is the outstanding fix.
+- **A new AWS service means a `cicd.tf` change in the same commit.** The CI deploy role's policy in [`terraform/cicd.tf`](terraform/cicd.tf) enumerates the services Terraform is allowed to manage. When a resource from a new service enters the stack, the policy must be extended alongside it — otherwise CI fails with `AccessDenied` at the plan step, because Terraform cannot even read the new resource. This was missed when the Phase 4 state machine was added (see CI/CD for how it surfaced).
+- **Dependency versions are pinned — keep them that way.** [`requirements.txt`](requirements.txt) previously used `>=` ranges, so every install could pull different dependency versions; that is why the `dist-info` bug below surfaced late — the code that trips over missing metadata only arrived with a newer transitive version. The file now pins exact `==` versions. Note the scope: `build.sh` installs its own short dependency list for the Lambda package rather than reading `requirements.txt`, so the pins currently govern the local environment only.
 - **`build.sh` must not delete `*.dist-info` directories.** It briefly did, to shrink the package, but `httpx` (a transitive dependency of `anthropic`) looks up its own version through `importlib.metadata` at import time and fails at runtime with `No package metadata was found` when the metadata directory is gone. The deletion line has been removed — do not reintroduce it.
+- **Reserved concurrency is intentionally unset (`-1`).** New AWS accounts have a concurrent-execution limit of 10, and reserving 5 for the triage function would drop unreserved capacity below the required minimum of 10, which the API rejects (Phase 3 decision 7). The low account limit itself provides the runaway protection until a limit increase is granted, at which point the reservation will be restored.
 
 ## Notes
 
