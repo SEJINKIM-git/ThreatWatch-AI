@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/workspace", "destination": "/index.html" },
+    { "source": "/workspace/:path*", "destination": "/index.html" }
+  ]
+}
