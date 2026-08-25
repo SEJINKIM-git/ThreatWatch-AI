@@ -194,6 +194,12 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_resource.approvals,
       aws_api_gateway_method.get_approvals,
       aws_api_gateway_integration.approvals,
+      aws_api_gateway_resource.cases,
+      aws_api_gateway_resource.case_detail,
+      aws_api_gateway_method.get_cases,
+      aws_api_gateway_method.get_case_detail,
+      aws_api_gateway_integration.cases,
+      aws_api_gateway_integration.case_detail,
     ]))
   }
 
