@@ -16,33 +16,32 @@ set -euo pipefail
 
 API_KEY=$(aws apigateway get-api-key --api-key "$KEY_ID" --include-value --query value --output text)
 
+
+
 send() {
   local body="$1"
   local id
   id=$(printf '%s' "$body" | sed -n 's/.*"alert_id":"\([^"]*\)".*/\1/p')
 
-  # 알림마다 새 논스로 서명합니다. 논스는 1회용이라
-  # 재사용하면 두 번째 요청부터 403으로 거부됩니다.
-  local timestamp nonce signature
-  timestamp=$(date +%s)
-  nonce=$(openssl rand -hex 16)
-  signature=$(printf '%s.%s' "$timestamp" "$nonce" \
-    | openssl dgst -sha256 -hmac "$HMAC_SECRET" -hex | sed 's/^.*= //')
+  # 알림마다 새 논스를 생성합니다. 재사용하면 authorizer가 거부합니다.
+  local ts=$(date +%s)
+  local nonce=$(openssl rand -hex 16)
+  local sig=$(printf '%s.%s' "$ts" "$nonce" | openssl dgst -sha256 -hmac "$HMAC_SECRET" -hex | sed 's/.*= //')
 
   local code
   code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$API_URL" \
     -H "x-api-key: $API_KEY" \
     -H "Content-Type: application/json" \
-    -H "x-tw-timestamp: $timestamp" \
+    -H "x-tw-timestamp: $ts" \
     -H "x-tw-nonce: $nonce" \
-    -H "x-tw-signature: $signature" \
+    -H "x-tw-signature: $sig" \
     -d "$body")
 
   printf '%-28s %s\n' "$id" "$code"
-
-  # LLM 호출이 붙어 있으므로 간격을 둡니다 (Usage Plan 5 req/s)
   sleep 3
 }
+
+: "${HMAC_SECRET:?HMAC_SECRET not set - aws ssm get-parameter --name /threatwatch/hmac-secret --with-decryption}"
 
 echo "alert_id                     http"
 echo "-------------------------------------"
