@@ -750,7 +750,7 @@ function TopNav({ mode, status, lang, setLang }) {
             ))}
           </div>
           <a
-            href="#simulator"
+            href="/workspace"
             style={{
               textDecoration: "none",
               fontSize: "11px",
@@ -884,7 +884,7 @@ function HeroSection({ mode, status, lastRunMeta, lang }) {
             </p>
 
             <div className="hero-actions">
-              <a className="hero-primary" href="#simulator">{lang === "ko" ? "제품 워크스페이스 실행" : "Run Product Workspace"}</a>
+              <a className="hero-primary" href="/workspace">{lang === "ko" ? "제품 워크스페이스 실행" : "Run Product Workspace"}</a>
               <a className="hero-secondary" href="#process">{lang === "ko" ? "관제 흐름 보기" : "View Command Flow"}</a>
             </div>
 
@@ -1078,7 +1078,7 @@ function ProcessSection({ activeNode, status, lang }) {
         description={lang === "ko" ? "보안 이벤트는 탐지, 보강, 요약, 점수화, 승인, 기록 단계를 따라 이동합니다. 각 레인은 담당 팀과 판단 경계를 분명히 하도록 설계했습니다." : "Security events move through detection, enrichment, summarization, scoring, approval, and logging. Each lane makes team ownership and decision boundaries explicit."}
         action={
           <a
-            href="#simulator"
+            href="/workspace"
             style={{
               textDecoration: "none",
               borderRadius: "999px",
