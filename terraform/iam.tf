@@ -82,11 +82,16 @@ data "aws_iam_policy_document" "lambda" {
     resources = ["${aws_s3_bucket.audit.arn}/cases/*"]
   }
 
+  # 두 토픽 ARN을 명시합니다. 와일드카드를 쓰면 계정의 다른 토픽까지
+  # 발행 대상이 되므로 리소스를 열거합니다.
   statement {
-    sid       = "PublishEscalation"
-    effect    = "Allow"
-    actions   = ["sns:Publish"]
-    resources = [aws_sns_topic.escalations.arn]
+    sid     = "PublishEscalation"
+    effect  = "Allow"
+    actions = ["sns:Publish"]
+    resources = [
+      aws_sns_topic.escalations.arn,
+      aws_sns_topic.depeg_alerts.arn,
+    ]
   }
 
   # SSM: /threatwatch/ 아래 파라미터만 조회. 시크릿은 여기서 옵니다.
