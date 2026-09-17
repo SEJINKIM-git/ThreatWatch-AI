@@ -25,7 +25,7 @@ pip install \
   anthropic pydantic python-dotenv
 
 echo "==> 애플리케이션 코드 복사"
-cp lambda_handler.py config.py models.py scenarios.py "$BUILD_DIR/"
+cp lambda_handler.py config.py models.py scenarios.py topic_router.py "$BUILD_DIR/"
 mkdir -p "$BUILD_DIR/data" && cp data/demo-scenarios.json "$BUILD_DIR/data/"
 mkdir -p "$BUILD_DIR/modules"
 cp modules/*.py "$BUILD_DIR/modules/"
