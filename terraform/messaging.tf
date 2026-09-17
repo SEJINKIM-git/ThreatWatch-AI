@@ -48,3 +48,23 @@ resource "aws_sns_topic_subscription" "escalation_email" {
   protocol  = "email"
   endpoint  = var.alert_email
 }
+
+# =============================================================
+# SNS - 디페그 조기경보 (Phase A)
+#
+# 보안 에스컬레이션과 디페그 경보는 받는 사람이 다릅니다.
+# 운영 알람 토픽을 분리했던 것과 같은 이유로 토픽을 나눕니다
+# (Phase 3 결정 5).
+# =============================================================
+
+resource "aws_sns_topic" "depeg_alerts" {
+  name = "${local.prefix}-depeg-alerts"
+}
+
+resource "aws_sns_topic_subscription" "depeg_alert_email" {
+  topic_arn = aws_sns_topic.depeg_alerts.arn
+  protocol  = "email"
+
+  # depeg_alert_email이 비어 있으면 기존 에스컬레이션 수신자를 따릅니다.
+  endpoint = coalesce(var.depeg_alert_email, var.alert_email)
+}

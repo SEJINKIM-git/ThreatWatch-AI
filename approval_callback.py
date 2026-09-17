@@ -88,7 +88,11 @@ def handler(event, context):
     alert_id = item.get("alert_id", "unknown")
 
     payload = {
-        "case": {"alert_id": alert_id},
+        "case": {
+            "alert_id": alert_id,
+            # 결과 알림의 토픽 라우팅에 쓰입니다 (디페그 케이스 분리).
+            "incident_type": item.get("incident_type", ""),
+        },
         "decision": decision,
     }
 

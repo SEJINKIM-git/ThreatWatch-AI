@@ -173,6 +173,11 @@ The backend is being migrated to AWS in phases:
     - [`requirements.txt`](requirements.txt) moved from `>=` ranges to exact `==` pins (see Known Issues for why, and for the scope of the pins)
     - [`seed_alerts.sh`](seed_alerts.sh) now signs every request — it had been rejected with `401` ever since HMAC authentication was introduced; each alert gets a fresh nonce, since the authorizer rejects a reused one
   - Evaluation of Amazon Bedrock for the LLM assessment step · Planned
+- **Phase A — Depeg early-warning integration** · In progress
+  - An external depeg early-warning engine posts alerts to the same `POST /alerts` endpoint with `incident_type` values prefixed `stablecoin_depeg_`; their `severity` is already the verdict of that engine's risk model
+  - These alerts bypass the LLM assessment step: [`modules/external_scored.py`](modules/external_scored.py) maps the severity deterministically (high → P1, medium → P2, low → P3) into the same `AIAnalysisResult` shape the LLM produces, so the rest of the pipeline is unchanged; an unmapped severity raises instead of being stored at a guessed level (see Phase A decision 1)
+  - New SNS topic `threatwatch-depeg-alerts` with its own email subscription (`depeg_alert_email`, defaulting to `alert_email`) — depeg notifications and security escalations have different recipients; both the triage notifier and the approval-outcome notification route through the shared [`topic_router.py`](topic_router.py)
+  - First pytest suite under [`tests/`](tests/) covering the mapping, the topic routing, and the pipeline branch (with the LLM client mocked to prove it is not called)
 
 Key design decisions in Phase 2:
 
@@ -213,6 +218,12 @@ Key design decisions in Phase 4 (HITL approval):
 6. **The approvals table is separate from the cases table.** Approvals have their own lifecycle (expiry, potential re-sends), and the callback Lambda has no reason to hold access to the full case table.
 7. **A timeout is an outcome, not silence.** Nobody responding to a security incident is itself a situation that needs a response. Expiry is caught, recorded on the case as `expired`, and re-notified rather than quietly dropped.
 8. **Environment-variable guard.** If `STATE_MACHINE_ARN` is unset, P1 cases fall back to the existing SNS path, so the pipeline keeps working before the state machine is deployed and in local runs.
+
+Key design decisions in Phase A (depeg integration):
+
+1. **Externally pre-scored alerts bypass the LLM.** The severity on a depeg alert is the output of an external risk engine whose model was calibrated by backtesting. Re-scoring it with a security prompt would create a second source of truth for the same alert, and when the two disagree there is no way to know which one is right — risk assessment must have exactly one source per alert. The severity mapping is deterministic, so `confidence` is 1.0, and an unknown severity fails the message instead of quietly recording it at a lower level (the same principle as Phase 2 decision 4). The failure propagates as a normal processing error — retried, then isolated to the DLQ — rather than taking the `InvalidPayload` drop path: an alert the external engine considered worth sending should stay visible for analysis, not vanish. The bypass is independent of `DEMO_MODE`, and `scenario_switch` remains demo-only (Phase 2 decision 5).
+2. **A dedicated topic for depeg alerts.** Security escalations and depeg alerts have different recipients, the same reason operational alarms got their own topic (Phase 3 decision 5). The routing rule lives in [`topic_router.py`](topic_router.py) at the repository root — not under `modules/` — because the `approval-finalize` deployment package does not bundle `modules/`, and the triage notifier and the approval-outcome notification must share one routing function rather than two copies of a prefix check. If `DEPEG_TOPIC_ARN` is unset, routing falls back to the escalation topic with a warning, so local runs before deployment keep working. Approval *request* emails still go to the escalation topic in every case: the analysts who approve containment are the same regardless of alert origin; only the outcome notification follows the case's topic.
+3. **The approval record carries `incident_type`.** The callback path resumes the state machine with only what the approvals table stores, so without this field the outcome notification for an approved or rejected depeg case could not be routed to the depeg topic — only the expiry path, which keeps the original input, would route correctly.
 
 ## Approval Workflow
 

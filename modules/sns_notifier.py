@@ -8,6 +8,7 @@ import logging
 import os
 
 from models import WorkflowState
+from topic_router import resolve_topic_arn
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,10 @@ class SNSNotifier:
 
         payload = state.final_payload
         ai = state.ai_result
+
+        # 디페그 경보는 수신자가 다르므로 전용 토픽으로 발행합니다.
+        # approval_finalize.py도 같은 라우팅 함수를 씁니다.
+        topic_arn = resolve_topic_arn(payload.incident_type)
 
         subject = f"[{payload.risk_level}] Security Alert - {payload.incident_type}"[:100]
 
@@ -64,7 +69,7 @@ class SNSNotifier:
 
         try:
             self.client.publish(
-                TopicArn=self.topic_arn,
+                TopicArn=topic_arn,
                 Subject=subject,
                 Message=message,
             )
