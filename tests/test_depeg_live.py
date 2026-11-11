@@ -51,3 +51,18 @@ def test_news_flag_adds_ten_points():
     news = analyze([candle(6, 1.0)], [{"title": "USDC depeg fears as redemptions paused"}], NOW)
     assert round(news["event"]["risk_score"] - calm, 1) == 10.0
     assert news["inputs"]["news"]["flag"] == 1
+
+
+def test_google_news_rss_parsing():
+    from news_feeds import parse_google_news_rss
+    xml = """<?xml version="1.0"?><rss><channel>
+    <item><title>USDC redemptions paused for EEA holders - CoinDesk</title>
+    <link>https://news.google.com/rss/articles/abc</link>
+    <pubDate>Wed, 11 Nov 2026 05:12:00 GMT</pubDate>
+    <source url="https://www.coindesk.com">CoinDesk</source></item>
+    </channel></rss>"""
+    [a] = parse_google_news_rss(xml)
+    assert a["title"] == "USDC redemptions paused for EEA holders"
+    assert a["domain"] == "CoinDesk"
+    assert a["seen"] == "20261111T051200Z"
+    assert classify(a["title"])["tier"] == "A"

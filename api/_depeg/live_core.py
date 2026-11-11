@@ -101,7 +101,7 @@ def recipients(score: float) -> list[dict[str, str]]:
 
 
 def analyze(ohlc: list[dict[str, Any]], articles: list[dict[str, Any]], now: datetime,
-            news_error: str | None = None) -> dict[str, Any]:
+            news_error: str | None = None, news_source: str = "none") -> dict[str, Any]:
     candles = completed_candles(ohlc, now)
     if not candles:
         raise ValueError("no completed hourly candle from Bitstamp")
@@ -126,7 +126,7 @@ def analyze(ohlc: list[dict[str, Any]], articles: list[dict[str, Any]], now: dat
                 "flag": flag,
                 "matched": matched[:12],
                 "error": news_error,
-                "source": "GDELT DOC 2.0 · last 24h",
+                "source": f"{news_source} · last 24h",
             },
         },
         "recipients": recipients(score),
