@@ -748,6 +748,23 @@ function TopNav({ mode, status, lang, setLang }) {
                 {t(item.label, lang)}
               </a>
             ))}
+            <a
+              href="/depeg"
+              style={{
+                color: THEME.textSoft,
+                textDecoration: "none",
+                fontSize: "11px",
+                padding: "8px 10px",
+                borderRadius: "10px",
+                border: `1px solid ${THEME.line}`,
+                background: "rgba(27,31,43,0.55)",
+                fontFamily: DISPLAY_FONT,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+              }}
+            >
+              {lang === "ko" ? "디페그 조기경보" : "Depeg Warning"}
+            </a>
           </div>
           <a
             href="/workspace"

@@ -8,6 +8,20 @@ LLM-powered security alert triage dashboard with a presentation-friendly scenari
 |---|---|---|
 | Overview + Scenario walkthrough | `/` | `public/demo-scenarios.json` (static) |
 | Live Workspace | `/workspace` | AWS pipeline (real runs) |
+| Depeg Early Warning | `/depeg` | `public/depeg/replay.json` (static, generated from the depeg engine) |
+
+### Depeg Early Warning (`/depeg`)
+
+Explains the stablecoin depeg early-warning system that sits on top of ThreatWatch (Phase A): the ten steps from market data to the human approval outcome with owners and status, an hour-by-hour replay of the March 2023 USDC depeg, and the literal alert the adapter sends into ThreatWatch.
+
+The page computes nothing. Every number comes from `public/depeg/replay.json`, which `scripts/build_depeg_replay.py` produces by calling the real engine (`compute_risk_score`) and adapter (`to_alert_request`) in the `depeg-early-warning` repository. Regenerate it whenever the engine or data changes:
+
+```bash
+# from this repo, using the depeg-early-warning virtualenv
+python scripts/build_depeg_replay.py --engine-repo ../depeg-early-warning --out public/depeg/replay.json
+```
+
+Step status labels are maintained by hand in `src/depeg/content.js` (`STATUS_AS_OF`).
 
 The overview page (`src/App.jsx`) explains the product and includes a scenario walkthrough section driven entirely by fixed scenario data, so it works offline. The Live Workspace (`src/Workspace.jsx`) submits alerts to the actual pipeline — API Gateway → SQS → Lambda (LLM triage) → DynamoDB/S3/SNS, with Step Functions approval for P1 cases — and shows how each submission is processed.
 
