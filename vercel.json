@@ -1,6 +1,8 @@
 {
   "rewrites": [
     { "source": "/workspace", "destination": "/index.html" },
-    { "source": "/workspace/:path*", "destination": "/index.html" }
+    { "source": "/workspace/:path*", "destination": "/index.html" },
+    { "source": "/depeg", "destination": "/index.html" },
+    { "source": "/depeg/:path((?!replay\\.json$).*)", "destination": "/index.html" }
   ]
 }

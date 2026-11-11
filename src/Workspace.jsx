@@ -337,6 +337,7 @@ function Header() {
             }} />
             LIVE
           </span>
+          <a href="/depeg" style={linkBtn}>Depeg early warning</a>
           <a href="/" style={linkBtn}>Overview</a>
         </div>
       </div>
