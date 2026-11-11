@@ -29,6 +29,74 @@ _table = boto3.resource("dynamodb", region_name=REGION).Table(APPROVALS_TABLE)
 _sns = boto3.client("sns", region_name=REGION)
 
 
+# topic_router.DEPEG_PREFIX 와 같은 값. 이 Lambda 는 단일 파일로 묶여 배포되므로
+# topic_router 를 import 할 수 없다. 두 값이 같은지는 tests/test_approval_message.py 가 확인한다.
+DEPEG_PREFIX = "stablecoin_depeg_"
+
+
+def build_message(case: dict, approval_id: str, callback_url: str) -> tuple:
+    """승인 요청 메일의 제목과 본문 줄을 만든다. 순수 함수.
+
+    디페그 경보는 보안 사건이 아니므로 "격리(containment)" 대신 대응 실행 여부를 묻는다.
+    위험 점수는 ThreatWatch 내부 등급 점수다. 디페그 엔진의 원래 점수는 Summary 에 있다.
+    """
+    alert_id = case.get("alert_id", "unknown")
+    approve_url = f"{callback_url}?id={approval_id}&decision=approve"
+    reject_url = f"{callback_url}?id={approval_id}&decision=reject"
+    hours = APPROVAL_TTL_SEC // 3600
+    incident_type = str(case.get("incident_type", ""))
+
+    if incident_type.startswith(DEPEG_PREFIX):
+        # SNS 메일 제목은 ASCII만 허용된다 (한글·em dash가 있으면 publish 가 실패). 본문은 UTF-8 가능.
+        subject = f"[APPROVAL] Depeg alert {alert_id[:8]} - response decision required"
+        lines = [
+            "스테이블코인 디페그 조기경보 — 대응 실행 여부를 결정해 주세요.",
+            "Stablecoin depeg early warning — your decision is required.",
+            "",
+            f"Alert ID   : {alert_id}",
+            f"Level      : {case.get('risk_level', 'n/a')} (ThreatWatch {case.get('risk_score', 'n/a')}/100)",
+            f"Type       : {incident_type}",
+            "",
+            "Summary (디페그 엔진 판정)",
+            f"  {case.get('summary', 'n/a')}",
+            "",
+            "승인 — 대응 실행 (운영자 상황실 유지, 자금팀 노출 축소 검토, 사용자 안내 1회)",
+            "Approve — run the response:",
+            f"  {approve_url}",
+            "",
+            "반려 — 오탐·데이터 장애로 판단, 기록만 남김",
+            "Reject — false alarm, record only:",
+            f"  {reject_url}",
+            "",
+            f"이 요청은 {hours}시간 뒤 만료됩니다. 무응답도 결과로 기록되고 상급자에게 통지됩니다.",
+            f"This request expires in {hours} hours; no answer is recorded and escalated.",
+        ]
+        return subject, lines
+
+    subject = f"[APPROVAL] {alert_id} requires review"
+    lines = [
+        "P1 case requires your decision.",
+        "",
+        f"Alert ID   : {alert_id}",
+        f"Risk Score : {case.get('risk_score', 'n/a')}/100",
+        f"Type       : {case.get('incident_type', 'n/a')}",
+        f"Confidence : {case.get('confidence', 'n/a')}",
+        "",
+        "Summary",
+        f"  {case.get('summary', 'n/a')}",
+        "",
+        "Approve containment:",
+        f"  {approve_url}",
+        "",
+        "Reject (false positive):",
+        f"  {reject_url}",
+        "",
+        f"This request expires in {hours} hours.",
+        "If no decision is made, the case is escalated automatically.",
+    ]
+    return subject, lines
+
+
 def handler(event, context):
     case = event.get("case", {})
     task_token = event.get("taskToken")
@@ -54,33 +122,11 @@ def handler(event, context):
         "expires_at": now + APPROVAL_TTL_SEC,
     })
 
-    approve_url = f"{CALLBACK_URL}?id={approval_id}&decision=approve"
-    reject_url = f"{CALLBACK_URL}?id={approval_id}&decision=reject"
-
-    lines = [
-        "P1 case requires your decision.",
-        "",
-        f"Alert ID   : {alert_id}",
-        f"Risk Score : {case.get('risk_score', 'n/a')}/100",
-        f"Type       : {case.get('incident_type', 'n/a')}",
-        f"Confidence : {case.get('confidence', 'n/a')}",
-        "",
-        "Summary",
-        f"  {case.get('summary', 'n/a')}",
-        "",
-        "Approve containment:",
-        f"  {approve_url}",
-        "",
-        "Reject (false positive):",
-        f"  {reject_url}",
-        "",
-        f"This request expires in {APPROVAL_TTL_SEC // 3600} hours.",
-        "If no decision is made, the case is escalated automatically.",
-    ]
+    subject, lines = build_message(case, approval_id, CALLBACK_URL)
 
     _sns.publish(
         TopicArn=TOPIC_ARN,
-        Subject=f"[APPROVAL] {alert_id} requires review"[:100],
+        Subject=subject[:100],
         Message="\n".join(lines),
     )
 
