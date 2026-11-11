@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./depeg.css";
 import { LineChart, FactorBars, SERIES, INK } from "./charts.jsx";
+import LiveNow from "./LiveNow.jsx";
 import {
   STATUS, STATUS_AS_OF, LANES, STEPS, APPROVAL_TIMELINE, OUTCOMES, GAPS,
 } from "./content.js";
@@ -31,13 +32,14 @@ function readLang() {
   try { return localStorage.getItem(LANG_KEY) === "en" ? "en" : "ko"; } catch { return "ko"; }
 }
 
-/** UTC 시각 → "3/11 08:00 UTC · 17:00 KST" */
-function fmtTime(t, lang) {
+/** UTC 시각 → "3/11 17:00 KST · 3/11 08:00 UTC" (short=true면 앞쪽 하나만) */
+function fmtTime(t, lang, short = false) {
   const d = new Date(t);
   const k = new Date(d.getTime() + 9 * 3600 * 1000);
   const hh = (x) => String(x).padStart(2, "0");
-  const utc = `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${hh(d.getUTCHours())}:00 UTC`;
-  const kst = `${k.getUTCMonth() + 1}/${k.getUTCDate()} ${hh(k.getUTCHours())}:00 KST`;
+  const utc = `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${hh(d.getUTCHours())}:${hh(d.getUTCMinutes())} UTC`;
+  const kst = `${k.getUTCMonth() + 1}/${k.getUTCDate()} ${hh(k.getUTCHours())}:${hh(k.getUTCMinutes())} KST`;
+  if (short) return lang === "ko" ? kst : utc;
   return lang === "ko" ? `${kst} · ${utc}` : `${utc} · ${kst}`;
 }
 
@@ -83,6 +85,7 @@ export default function DepegPage() {
       <Header lang={lang} setLang={setLang} L={L} />
       <main className="dp-main">
         <Hero data={data} L={L} lang={lang} />
+        <LiveNow L={L} lang={lang} fmtTime={fmtTime} labelOf={(m) => METRIC[m]?.[lang] ?? m} />
         <HowItWorks data={data} L={L} pick={pick} lang={lang} />
         <Replay data={data} L={L} lang={lang} />
         <Handoff data={data} L={L} lang={lang} />
@@ -353,7 +356,7 @@ function Replay({ data, L, lang }) {
 
   return (
     <section className="dp-section" id="replay">
-      <p className="dp-label">{L("실제 데이터 리플레이", "Real-data replay")}</p>
+      <p className="dp-label">{L("장면 2 · 실제 데이터 리플레이", "Scene 2 · Real-data replay")}</p>
       <h2 className="dp-h2">{L("2023년 3월 USDC 사태에 그대로 돌려보기", "Replaying the March 2023 USDC depeg")}</h2>
       <p className="dp-lede" style={{ fontSize: 15.5 }}>
         {L(

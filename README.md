@@ -23,6 +23,8 @@ python scripts/build_depeg_replay.py --engine-repo ../depeg-early-warning --out 
 
 Step status labels are maintained by hand in `src/depeg/content.js` (`STATUS_AS_OF`).
 
+**Live today (Scene 1).** The top of `/depeg` calls `api/depeg-live.py`, a read-only Python function that pulls the latest completed Bitstamp USDC/USD hourly candles and the last 24 hours of GDELT headlines, classifies headlines with a fixed rubric (`api/_depeg/news_rubric.py` — no AI judgement, so results are reproducible), adds the latest hand-verified Circle filing, and scores everything with a verbatim copy of the depeg engine (`api/_depeg/risk_score.py`). It sends nothing and uses no secrets; responses are CDN-cached for 10 minutes. Refresh the engine copy with `scripts/sync_depeg_engine.sh ../depeg-early-warning`. Offline tests: `python -m pytest tests/test_depeg_live.py`.
+
 The overview page (`src/App.jsx`) explains the product and includes a scenario walkthrough section driven entirely by fixed scenario data, so it works offline. The Live Workspace (`src/Workspace.jsx`) submits alerts to the actual pipeline — API Gateway → SQS → Lambda (LLM triage) → DynamoDB/S3/SNS, with Step Functions approval for P1 cases — and shows how each submission is processed.
 
 Routing is intentionally minimal: `src/main.jsx` branches on `window.location.pathname` instead of adding React Router, to keep dependencies down.

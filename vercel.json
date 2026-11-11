@@ -1,4 +1,10 @@
 {
+  "functions": {
+    "api/depeg-live.py": {
+      "includeFiles": "api/_depeg/**",
+      "maxDuration": 20
+    }
+  },
   "rewrites": [
     { "source": "/workspace", "destination": "/index.html" },
     { "source": "/workspace/:path*", "destination": "/index.html" },
