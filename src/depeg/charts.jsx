@@ -48,7 +48,7 @@ export function LineChart({
 }) {
   const [ref, width] = useWidth();
   const pad = compact
-    ? { l: 34, r: 12, t: 10, b: 20 }
+    ? { l: 50, r: 12, t: 10, b: 20 }
     : { l: 52, r: 16, t: 14, b: 28 };
   const iw = width - pad.l - pad.r;
   const ih = height - pad.t - pad.b;

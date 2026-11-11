@@ -115,7 +115,7 @@ export const STEPS = [
     code: "API Gateway → SQS",
   },
   {
-    key: "triage", lane: "tw", num: "⑤", status: "built",
+    key: "triage", lane: "tw", num: "⑤", status: "live",
     owner: { ko: "세진", en: "Sejin" },
     title: { ko: "AI 재채점 건너뛰기", en: "Skip AI re-scoring" },
     short: { ko: "디페그 경보는 AI가 다시 채점하지 않음", en: "Depeg alerts are not re-scored by the LLM" },
@@ -128,7 +128,7 @@ export const STEPS = [
     code: "modules/external_scored.py",
   },
   {
-    key: "route", lane: "tw", num: "⑥", status: "built",
+    key: "route", lane: "tw", num: "⑥", status: "live",
     owner: { ko: "세진", en: "Sejin" },
     title: { ko: "기록·알림 분리", en: "Store & route" },
     short: { ko: "사건 기록 후 디페그 전용 채널로 알림", en: "Stores the case, notifies a depeg-only channel" },
@@ -214,10 +214,10 @@ export const GAPS = [
     owner: { ko: "원준 · 세진", en: "Wonjun · Sejin" },
   },
   {
-    ko: "ThreatWatch 수정분이 아직 main에 없습니다",
-    en: "ThreatWatch changes are not merged yet",
-    dKo: "⑤ AI 재채점 건너뛰기와 ⑥ 알림 분리는 feat/depeg-integration 브랜치에 구현돼 있습니다. 시연 전에 반영·배포해야 실제 경보가 끝까지 흐릅니다.",
-    dEn: "Steps ⑤ and ⑥ live on feat/depeg-integration; they need merging and deploying before a real alert can flow end to end.",
+    ko: "엔진이 아직 실제로 경보를 보내지 않습니다",
+    en: "The engine does not send alerts yet",
+    dKo: "ThreatWatch 쪽 수용(⑤ AI 재채점 건너뛰기, ⑥ 알림 분리)은 운영에 반영됐습니다. 남은 것은 엔진이 만든 경보를 서명해서 실제로 보내는 연결로, ThreatWatch의 기존 전송 코드(send_signed.py)를 재사용합니다.",
+    dEn: "ThreatWatch's side (⑤ skip AI re-scoring, ⑥ separate channel) is live. What's left is signing and actually sending the engine's alert, reusing ThreatWatch's existing sender (send_signed.py).",
     owner: { ko: "세진", en: "Sejin" },
   },
 ];
