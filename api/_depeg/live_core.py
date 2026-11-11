@@ -57,7 +57,9 @@ def completed_candles(ohlc: list[dict[str, Any]], now: datetime) -> list[dict[st
     return out
 
 
-def build_signals(price: dict[str, Any], flag: int, now: datetime) -> list[dict[str, Any]]:
+def build_signals(price: dict[str, Any], flag: int | None, now: datetime) -> list[dict[str, Any]]:
+    """flag=None 이면 뉴스를 확인하지 못한 것 — 뉴스 시그널을 아예 넣지 않는다.
+    (0을 넣으면 '위험 없음'으로 계산돼 확인 못 한 것을 확인한 것처럼 보이게 된다)"""
     t = price["t"]
     bps = round((price["price"] - 1.0) * 10000, 2)
     pub = datetime.strptime(ATTESTATION["published_at"], FMT).replace(tzinfo=timezone.utc)
@@ -74,9 +76,10 @@ def build_signals(price: dict[str, Any], flag: int, now: datetime) -> list[dict[
          "observed_at": ATTESTATION["published_at"], "metric": "reserve_tbill_ratio", "value": ATTESTATION["tbill_ratio"]},
         {"schema_version": 1, "signal_id": f"offchain-usdc-{iso(now)}-age", "source": "offchain", "coin": "USDC",
          "observed_at": iso(now), "metric": "attestation_age_days", "value": age},
+    ] + ([] if flag is None else [
         {"schema_version": 1, "signal_id": f"offchain-usdc-{iso(now)}-news", "source": "offchain", "coin": "USDC",
          "observed_at": iso(now), "metric": "news_risk_flag", "value": flag},
-    ]
+    ])
 
 
 def recipients(score: float) -> list[dict[str, str]]:
@@ -106,8 +109,14 @@ def analyze(ohlc: list[dict[str, Any]], articles: list[dict[str, Any]], now: dat
     if not candles:
         raise ValueError("no completed hourly candle from Bitstamp")
     latest = candles[-1]
+    # 24시간 안의 기사만 본다 (출처 쪽 기간 필터에만 기대지 않음). 시각을 모르는 기사는 남긴다.
+    cutoff = (now - timedelta(hours=24)).strftime("%Y%m%dT%H%M%SZ")
+    articles = [a for a in articles if not a.get("seen") or a["seen"] >= cutoff]
     flag, matched = news_flag(articles)
+    if news_error:
+        flag, matched = None, []
     signals = build_signals(latest, flag, now)
+    price_age_h = (now - datetime.strptime(latest["t"], FMT).replace(tzinfo=timezone.utc)).total_seconds() / 3600
     event = engine.compute_risk_score(signals, coin="USDC")
     score = event["risk_score"]
     verdict = "high" if score >= THRESHOLD_APPROVAL else "alert" if score >= THRESHOLD_ALERT else "ok"
@@ -118,6 +127,8 @@ def analyze(ohlc: list[dict[str, Any]], articles: list[dict[str, Any]], now: dat
         "event": event,
         "inputs": {
             "price": latest,
+            # 거래소 정지 등으로 최신 확정 캔들이 2시간보다 오래되면 화면에 '지연' 표시
+            "price_stale": price_age_h > 2,
             "peg_bps": signals[1]["value"],
             "prices_24h": candles[-24:],
             "attestation": {**ATTESTATION, "age_days": signals[4]["value"]},

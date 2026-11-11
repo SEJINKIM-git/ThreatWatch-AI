@@ -29,6 +29,16 @@ const NOW_TEXT = {
   none: { ko: "보내지 않음", en: "Nothing sent", tone: "neutral" },
 };
 
+/** 외부 피드 URL은 http/https만 링크로 쓴다 (javascript: 등 차단) */
+function safeUrl(u) {
+  try {
+    const url = new URL(u);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 function gdeltTime(s) {
   // GDELT seendate: 20261111T063000Z
   const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})/.exec(s || "");
@@ -125,7 +135,9 @@ function LiveBody({ data, L, lang, labelOf, fmtTime, reload }) {
             </div>
             <div className={`dp-verdict ${verdict}`} style={{ alignSelf: "end" }}>
               <strong>{verdictText}</strong>
-              {verdict === "ok" && (news.flag || event.risk_score >= 25)
+              {verdict === "ok" && news.flag === null
+                ? L("뉴스를 확인하지 못해 가격·공시만으로 낸 점수입니다. 뉴스 신호는 '위험 없음'이 아니라 '확인 불가'입니다.", "Scored from price and filings only — news could not be checked, which is not the same as no news risk.")
+                : verdict === "ok" && (news.flag || event.risk_score >= 25)
                 ? L("기준선 아래지만 주의할 신호가 있습니다. 운영자가 대시보드에서 지켜보는 단계입니다.", "Below the line, but there are warning signs. Operators watch it on the dashboard.")
                 : verdict === "ok"
                 ? L("평상시 범위입니다. 오탐 없이 조용히 있는 것도 시스템의 역할입니다.", "Within the normal range. Staying quiet without false alarms is part of the job.")
@@ -144,13 +156,16 @@ function LiveBody({ data, L, lang, labelOf, fmtTime, reload }) {
           <dl className="dp-kv dp-live-inputs">
             <div><dt>{L("USDC 가격", "USDC price")}</dt>
               <dd className="dp-num">${inputs.price.price.toFixed(4)} · {inputs.peg_bps > 0 ? "+" : ""}{inputs.peg_bps} bps
-                <span className="dp-small"> ({fmtTime(inputs.price.t, lang, true)} {L("확정", "close")})</span></dd></div>
+                <span className="dp-small"> ({fmtTime(inputs.price.t, lang, true)} {L("확정", "close")})</span>
+                {inputs.price_stale && <span className="dp-chip warn" style={{ marginLeft: 8 }}>{L("가격 데이터 지연", "Price feed delayed")}</span>}</dd></div>
             <div><dt>{L("최신 공시", "Latest filing")}</dt>
               <dd>{att.report} · {L("발행", "published")} {att.published_at.slice(0, 10)} · {L(`${Math.floor(att.age_days)}일 경과`, `${Math.floor(att.age_days)} days old`)}
                 <span className="dp-small"> · {L("현금", "cash")} {(att.cash_ratio * 100).toFixed(1)}% · {L("국채", "T-bills")} {(att.tbill_ratio * 100).toFixed(1)}% · {L("레포", "repo")} {(att.repo_ratio * 100).toFixed(1)}%</span></dd></div>
             <div><dt>{L("뉴스 위험 신호", "News risk flag")}</dt>
-              <dd>{news.flag ? <span className="dp-chip bad">{L("켜짐", "On")}</span> : <span className="dp-chip good">{L("꺼짐", "Off")}</span>}
-                <span className="dp-small"> {L(`최근 24시간 기사 ${news.scanned}건 확인`, `${news.scanned} articles checked, last 24h`)}</span></dd></div>
+              <dd>{news.flag === null
+                ? <span className="dp-chip neutral">{L("확인 불가", "Unavailable")}</span>
+                : news.flag ? <span className="dp-chip bad">{L("켜짐", "On")}</span> : <span className="dp-chip good">{L("꺼짐", "Off")}</span>}
+                {news.flag !== null && <span className="dp-small"> {L(`최근 24시간 기사 ${news.scanned}건 확인`, `${news.scanned} articles checked, last 24h`)}</span>}</dd></div>
           </dl>
 
           <p className="dp-h3" style={{ marginTop: 24, fontSize: 15 }}>{L("최근 24시간 가격", "Last 24 hours")}</p>
@@ -185,17 +200,20 @@ function LiveBody({ data, L, lang, labelOf, fmtTime, reload }) {
                 {L(`해당하는 기사가 없습니다 (${news.scanned}건 확인).`, `No matching articles (${news.scanned} checked).`)}
               </p>
             )}
-            {news.matched.map((a) => {
+            {news.matched.map((a, i) => {
               const t = gdeltTime(a.seen);
+              const href = safeUrl(a.url);
+              const Tag = href ? "a" : "div";
+              const linkProps = href ? { href, target: "_blank", rel: "noreferrer noopener" } : {};
               return (
-                <a key={a.url} className="dp-news-item" href={a.url} target="_blank" rel="noreferrer noopener">
+                <Tag key={`${i}-${a.url}`} className="dp-news-item" {...linkProps}>
                   <span className="dp-row" style={{ justifyContent: "flex-start", gap: 8, flexWrap: "wrap" }}>
                     <span className={`dp-chip ${TIER[a.tier].tone}`}>{TIER[a.tier][lang]}</span>
                     <span className="dp-owner">{a.domain}{t ? ` · ${fmtTime(t, lang, true)}` : ""}</span>
                   </span>
                   <span className="dp-news-title">{a.title}</span>
                   <span className="dp-owner">{L("근거", "Rule")}: “{a.who}” + “{a.why}”</span>
-                </a>
+                </Tag>
               );
             })}
           </div>
@@ -226,7 +244,7 @@ function LiveBody({ data, L, lang, labelOf, fmtTime, reload }) {
         </p>
       </div>
       <p className="dp-foot" style={{ marginTop: 14, paddingTop: 0 }}>
-        {L("엔진", "Engine")} @{data.engine} · {L("가격", "Price")}: Bitstamp USDC/USD 1h · {L("뉴스", "News")}: GDELT · {L("공시", "Filing")}: Circle {att.report} ({L("손 검증값", "hand-verified")})
+        {L("엔진", "Engine")} @{data.engine} · {L("가격", "Price")}: Bitstamp USDC/USD 1h · {L("뉴스", "News")}: {news.source} · {L("공시", "Filing")}: Circle {att.report} ({L("손 검증값", "hand-verified")})
       </p>
     </>
   );
