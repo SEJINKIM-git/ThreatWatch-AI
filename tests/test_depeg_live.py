@@ -66,3 +66,11 @@ def test_google_news_rss_parsing():
     assert a["domain"] == "CoinDesk"
     assert a["seen"] == "20261111T051200Z"
     assert classify(a["title"])["tier"] == "A"
+
+
+def test_real_headlines_from_2026_11_11():
+    """2026-11-11 Google News 실제 제목 — 사업 뉴스는 무시, 규제 일정은 관찰, 위기 신호는 없음."""
+    assert classify("Goldman, Citi Among Banks in $270 Million Stablecoin Backing") is None
+    assert classify("PNC Launches USDC Payments Pilot With Coinbase") is None
+    c = classify("Crypto News Today: Waller's Rate-Hike Warning, MARA's $1.1B Bitcoin Sale and USDC's EU Deadline")
+    assert c["tier"] == "C"

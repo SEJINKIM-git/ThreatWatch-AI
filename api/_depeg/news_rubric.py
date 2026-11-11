@@ -43,7 +43,7 @@ BANK_DISTRESS = [
 
 WATCH_ONLY = [
     r"\bMiCA\b", r"\bEBA\b", r"GENIUS Act", r"\bSEC\b", r"regulat", r"supervis",
-    r"licen[cs]e", r"charter",
+    r"licen[cs]e", r"charter", r"\bEU\b", r"\bEEA\b", r"deadline", r"complian",
 ]
 
 
