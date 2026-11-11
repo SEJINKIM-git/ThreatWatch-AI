@@ -21,6 +21,16 @@ variable "alert_email" {
   type        = string
 }
 
+variable "depeg_alert_email" {
+  description = <<-EOT
+    디페그 조기경보를 받을 이메일. 보안 에스컬레이션과 수신자가 달라
+    토픽을 분리합니다. null이면 alert_email을 그대로 따릅니다.
+    구독 확인 메일을 클릭해야 활성화됩니다.
+  EOT
+  type        = string
+  default     = null
+}
+
 # --- Lambda ---
 
 variable "lambda_memory_mb" {

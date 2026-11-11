@@ -36,6 +36,11 @@ output "topic_arn" {
   value       = aws_sns_topic.escalations.arn
 }
 
+output "depeg_topic_arn" {
+  description = "디페그 조기경보 토픽 ARN"
+  value       = aws_sns_topic.depeg_alerts.arn
+}
+
 output "audit_bucket" {
   description = "감사 로그 버킷"
   value       = aws_s3_bucket.audit.id
@@ -60,6 +65,7 @@ output "env_exports" {
     export DLQ_URL=${aws_sqs_queue.dlq.url}
     export TABLE_NAME=${aws_dynamodb_table.cases.name}
     export TOPIC_ARN=${aws_sns_topic.escalations.arn}
+    export DEPEG_TOPIC_ARN=${aws_sns_topic.depeg_alerts.arn}
     export API_URL=${aws_api_gateway_stage.prod.invoke_url}/${aws_api_gateway_resource.alerts.path_part}
     export KEY_ID=${aws_api_gateway_api_key.main.id}
   EOT

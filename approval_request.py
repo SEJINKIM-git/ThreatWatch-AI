@@ -45,6 +45,9 @@ def handler(event, context):
     _table.put_item(Item={
         "approval_id": approval_id,
         "alert_id": alert_id,
+        # 콜백 경로의 결과 알림이 토픽을 라우팅할 때 필요합니다.
+        # 콜백은 이 레코드 말고는 케이스 정보를 갖지 못합니다.
+        "incident_type": case.get("incident_type", ""),
         "task_token": task_token,
         "status": "pending",
         "created_at": now,

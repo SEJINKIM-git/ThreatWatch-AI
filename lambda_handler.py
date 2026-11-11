@@ -14,6 +14,7 @@ from config import Config
 from modules.alert_builder import AlertBuilder
 from modules.precheck import PreCheckValidator
 from modules.ai_analyzer import AIAnalyzer
+from modules.external_scored import build_assessment_from_severity, is_external_scored
 from modules.normalizer import PayloadNormalizer
 from modules.decision_router import DecisionRouter
 from modules.dynamo_logger import DynamoCaseStore
@@ -112,8 +113,18 @@ def process_record(record: dict) -> dict:
         f"missing={state.precheck_result.total_missing}"
     )
 
-    # Step 04 - LLM 위험도 평가
-    state = _analyzer.analyze(state)
+    # Step 04 - 위험도 평가
+    # 외부 리스크 엔진이 이미 판정한 경보(디페그)는 LLM을 거치지 않습니다.
+    # 재채점은 외부 판정을 덮어쓰는 사고이며, 이 분기는 DEMO_MODE와 무관합니다.
+    # 알 수 없는 severity는 UnknownSeverityError로 전파되어 DLQ에 격리됩니다.
+    if is_external_scored(state.alert_data.incident_type):
+        state.ai_result = build_assessment_from_severity(state.alert_data)
+        logger.info(
+            f"[{alert_id}] external pre-scored - LLM bypassed, "
+            f"severity={state.alert_data.severity} -> {state.ai_result.risk_level}"
+        )
+    else:
+        state = _analyzer.analyze(state)
 
     # Step 07 - 최종 페이로드 정규화
     state = _normalizer.normalize(state)

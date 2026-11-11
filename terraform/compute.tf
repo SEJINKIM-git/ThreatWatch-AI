@@ -31,9 +31,9 @@ resource "aws_lambda_function" "triage" {
     variables = {
       TABLE_NAME        = aws_dynamodb_table.cases.name
       TOPIC_ARN         = aws_sns_topic.escalations.arn
+      DEPEG_TOPIC_ARN   = aws_sns_topic.depeg_alerts.arn
       S3_AUDIT_BUCKET   = aws_s3_bucket.audit.id
       DEMO_MODE         = tostring(var.demo_mode)
-      STATE_MACHINE_ARN = aws_sfn_state_machine.approval.arn
       STATE_MACHINE_ARN = aws_sfn_state_machine.approval.arn
     }
   }

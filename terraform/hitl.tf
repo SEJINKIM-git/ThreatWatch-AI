@@ -213,11 +213,15 @@ data "aws_iam_policy_document" "approval_finalize" {
     resources = [aws_dynamodb_table.cases.arn]
   }
 
+  # 결과 알림은 케이스에 따라 두 토픽 중 하나로 갑니다 (디페그 분리).
   statement {
-    sid       = "NotifyOutcome"
-    effect    = "Allow"
-    actions   = ["sns:Publish"]
-    resources = [aws_sns_topic.escalations.arn]
+    sid     = "NotifyOutcome"
+    effect  = "Allow"
+    actions = ["sns:Publish"]
+    resources = [
+      aws_sns_topic.escalations.arn,
+      aws_sns_topic.depeg_alerts.arn,
+    ]
   }
 }
 
@@ -232,10 +236,21 @@ resource "aws_iam_role_policy_attachment" "approval_finalize_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+# 단일 파일이 아니라 topic_router.py를 함께 담습니다.
+# 결과 알림이 트리아지 Lambda와 같은 토픽 라우팅 규칙을 쓰기 위함입니다.
 data "archive_file" "approval_finalize" {
   type        = "zip"
-  source_file = "${path.module}/../approval_finalize.py"
   output_path = "${path.module}/.build/approval_finalize.zip"
+
+  source {
+    filename = "approval_finalize.py"
+    content  = file("${path.module}/../approval_finalize.py")
+  }
+
+  source {
+    filename = "topic_router.py"
+    content  = file("${path.module}/../topic_router.py")
+  }
 }
 
 resource "aws_cloudwatch_log_group" "approval_finalize" {
@@ -258,8 +273,9 @@ resource "aws_lambda_function" "approval_finalize" {
 
   environment {
     variables = {
-      TABLE_NAME = aws_dynamodb_table.cases.name
-      TOPIC_ARN  = aws_sns_topic.escalations.arn
+      TABLE_NAME      = aws_dynamodb_table.cases.name
+      TOPIC_ARN       = aws_sns_topic.escalations.arn
+      DEPEG_TOPIC_ARN = aws_sns_topic.depeg_alerts.arn
     }
   }
 

@@ -11,12 +11,14 @@ import time
 
 import boto3
 
+from topic_router import resolve_topic_arn
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 REGION = os.environ.get("AWS_REGION", "ap-northeast-2")
 TABLE_NAME = os.environ["TABLE_NAME"]
-TOPIC_ARN = os.environ["TOPIC_ARN"]
+TOPIC_ARN = os.environ["TOPIC_ARN"]  # 기본 토픽. 미설정이면 여기서 바로 실패해야 합니다.
 
 _table = boto3.resource("dynamodb", region_name=REGION).Table(TABLE_NAME)
 _sns = boto3.client("sns", region_name=REGION)
@@ -78,8 +80,11 @@ def handler(event, context):
         f"Outcome  : {decision}",
     ]
 
+    # 디페그 케이스의 결과 알림은 트리아지와 같은 라우팅 규칙으로
+    # 전용 토픽에 발행합니다. incident_type은 콜백 경로에서는
+    # 승인 레코드에서, 만료 경로에서는 원본 입력에서 옵니다.
     _sns.publish(
-        TopicArn=TOPIC_ARN,
+        TopicArn=resolve_topic_arn(case.get("incident_type")),
         Subject=f"[{decision.upper()}] {alert_id}"[:100],
         Message="\n".join(lines),
     )
