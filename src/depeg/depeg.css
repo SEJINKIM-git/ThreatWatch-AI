@@ -260,3 +260,16 @@
   .dp-live-score { grid-template-columns: minmax(0, 1fr); }
   .dp-recips { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ---------- 장면 3: 모의 위기 ---------- */
+.dp-sim-controls { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
+.dp-input {
+  width: 100%; font: 500 13px var(--sans); color: var(--text);
+  background: var(--s-high); border: 0; border-radius: 12px; padding: 10px 14px;
+}
+.dp-input:focus { outline: 2px solid rgba(77, 159, 255, 0.45); background: var(--s-top); }
+.dp-input:disabled { opacity: 0.5; }
+label.dp-secondary { display: inline-flex; align-items: center; }
+@media (max-width: 1080px) {
+  .dp-sim-controls { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+}

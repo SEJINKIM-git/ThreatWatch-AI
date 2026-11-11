@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import "./depeg.css";
 import { LineChart, FactorBars, SERIES, INK } from "./charts.jsx";
 import LiveNow from "./LiveNow.jsx";
+import SimCrisis from "./SimCrisis.jsx";
 import {
   STATUS, STATUS_AS_OF, LANES, STEPS, APPROVAL_TIMELINE, OUTCOMES, GAPS,
 } from "./content.js";
@@ -88,6 +89,7 @@ export default function DepegPage() {
         <LiveNow L={L} lang={lang} fmtTime={fmtTime} labelOf={(m) => METRIC[m]?.[lang] ?? m} />
         <HowItWorks data={data} L={L} pick={pick} lang={lang} />
         <Replay data={data} L={L} lang={lang} />
+        <SimCrisis L={L} lang={lang} fmtTime={fmtTime} labelOf={(m) => METRIC[m]?.[lang] ?? m} />
         <Handoff data={data} L={L} lang={lang} />
         <Gaps L={L} pick={pick} lang={lang} />
         <Footer data={data} L={L} />
