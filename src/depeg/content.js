@@ -94,8 +94,8 @@ export const STEPS = [
     title: { ko: "경보 변환", en: "Alert adapter" },
     short: { ko: "점수를 ThreatWatch가 읽는 경보 양식으로 바꿈", en: "Reshapes the score into ThreatWatch's alert format" },
     what: {
-      ko: "ThreatWatch는 보안 경보를 정해진 양식으로만 받습니다. 그 양식에 맞춰 사고 유형(stablecoin_depeg_usdc), 등급, 근거 항목을 채워 보냅니다. 같은 경보가 두 번 가도 한 번만 처리되도록 고유 번호를 붙입니다.",
-      en: "ThreatWatch accepts alerts in a fixed format. This fills in the incident type (stablecoin_depeg_usdc), severity and indicators, with a unique id so a resend is processed once.",
+      ko: "ThreatWatch는 보안 경보를 정해진 양식으로만 받습니다. 그 양식에 맞춰 사고 유형(stablecoin_depeg_risk_usdc), 등급, 근거 항목을 채워 보냅니다. 같은 경보가 두 번 가도 한 번만 처리되도록 고유 번호를 붙입니다.",
+      en: "ThreatWatch accepts alerts in a fixed format. This fills in the incident type (stablecoin_depeg_risk_usdc), severity and indicators, with a unique id so a resend is processed once.",
     },
     input: { ko: "기준을 넘은 점수", en: "A score over the threshold" },
     output: { ko: "ThreatWatch 경보 (POST /alerts)", en: "ThreatWatch alert (POST /alerts)" },
