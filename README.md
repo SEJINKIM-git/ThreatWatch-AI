@@ -92,3 +92,9 @@ An earlier iteration ran triage through n8n; `api/n8n-webhook.js` remains as par
 ## Authors
 
 Sejin Kim / Chaehoon Lee — IS 3060-301 Spring
+
+### Scene 3 — simulated crisis (`/depeg#sim`)
+
+Upload a crisis file (CSV or JSON; template at `public/depeg/sim-template.csv`). `api/depeg-sim.py` scores every hour with the copied engine (only that hour's values, empty columns left out) and the page plays it back. The first time the score reaches 85 during playback, the page asks the same function to send **one** alert: the server re-scores that hour, builds the AlertRequest with the copied adapter (`description` prefixed `[DEMO SIMULATION · file · time]`), signs it like `send_signed.py`, and posts it to ThreatWatch. The case then follows the normal P1 path (approval email → approve/reject link), and the page polls `/api/tw-cases` until the decision shows.
+
+Real sending needs `DEPEG_DEMO_KEY` set in Vercel (Production) and the same key typed on the page; without it the page only shows where the alert would have gone. The key is compared on the server and never returned. Tests: `python -m pytest tests/test_depeg_sim.py`.

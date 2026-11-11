@@ -9,14 +9,18 @@ BRANCH="$(git -C "$REPO" rev-parse --abbrev-ref HEAD)"
 if [ "$BRANCH" != "main" ] && [ "${ALLOW_NON_MAIN:-0}" != "1" ]; then
   echo "엔진 저장소가 main이 아닙니다 ($BRANCH). main으로 바꾸거나 ALLOW_NON_MAIN=1 을 주세요." >&2; exit 1
 fi
-if ! git -C "$REPO" diff --quiet HEAD -- src/engine/risk_score.py; then
-  echo "src/engine/risk_score.py 에 커밋되지 않은 변경이 있습니다." >&2; exit 1
+if ! git -C "$REPO" diff --quiet HEAD -- src/engine/risk_score.py src/adapters/threatwatch_sender.py; then
+  echo "엔진·어댑터에 커밋되지 않은 변경이 있습니다." >&2; exit 1
 fi
 COMMIT="$(git -C "$REPO" rev-parse --short HEAD)"
-OUT="api/_depeg/risk_score.py"
-{
-  echo "# AUTO-COPIED from depeg-early-warning/src/engine/risk_score.py @${COMMIT}"
-  echo "# 직접 고치지 말 것 — 엔진 저장소에서 고친 뒤 scripts/sync_depeg_engine.sh 로 다시 복사"
-  git -C "$REPO" show HEAD:src/engine/risk_score.py
-} > "$OUT"
-echo "synced engine @${COMMIT} -> ${OUT}"
+copy() {  # $1 = 엔진 저장소 안 경로, $2 = 복사본 경로
+  {
+    echo "# AUTO-COPIED from depeg-early-warning/$1 @${COMMIT}"
+    echo "# 직접 고치지 말 것 — 엔진 저장소에서 고친 뒤 scripts/sync_depeg_engine.sh 로 다시 복사"
+    git -C "$REPO" show "HEAD:$1"
+  } > "$2"
+  echo "synced $1 @${COMMIT} -> $2"
+}
+
+copy src/engine/risk_score.py api/_depeg/risk_score.py
+copy src/adapters/threatwatch_sender.py api/_depeg/threatwatch_sender.py

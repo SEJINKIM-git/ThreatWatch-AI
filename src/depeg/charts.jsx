@@ -44,8 +44,10 @@ export function useWidth(initial = 640) {
  */
 export function LineChart({
   series, times, yMin, yMax, yTicks, formatY, refLines = [], markers = [],
-  height = 220, hoverIdx, onHover, ariaLabel, compact = false,
+  height = 220, hoverIdx, onHover, ariaLabel, compact = false, upto,
 }) {
+  // upto: 재생 중일 때 여기까지만 선을 그린다 (x축 눈금은 전체 기간 그대로 — 화면이 늘어나지 않게)
+  const shown = (vals) => (upto == null ? vals : vals.slice(0, upto + 1));
   const [ref, width] = useWidth();
   const pad = compact
     ? { l: 50, r: 12, t: 10, b: 20 }
@@ -112,12 +114,12 @@ export function LineChart({
 
         {/* 선 */}
         {series.map((s) => (
-          <path key={s.key} d={path(s.values)} fill="none" stroke={s.color}
+          <path key={s.key} d={path(shown(s.values))} fill="none" stroke={s.color}
                 strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
         ))}
 
         {/* 데이터에서 나온 표시점 */}
-        {markers.map((m) => (
+        {markers.filter((m) => upto == null || m.i <= upto).map((m) => (
           <g key={m.label}>
             <circle cx={x(m.i)} cy={y(m.v)} r="5" fill={m.color}
                     stroke="#0e1523" strokeWidth="2" />

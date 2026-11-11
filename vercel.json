@@ -3,12 +3,16 @@
     "api/depeg-live.py": {
       "includeFiles": "api/_depeg/**",
       "maxDuration": 20
+    },
+    "api/depeg-sim.py": {
+      "includeFiles": "api/_depeg/**",
+      "maxDuration": 20
     }
   },
   "rewrites": [
     { "source": "/workspace", "destination": "/index.html" },
     { "source": "/workspace/:path*", "destination": "/index.html" },
     { "source": "/depeg", "destination": "/index.html" },
-    { "source": "/depeg/:path((?!replay\\.json$).*)", "destination": "/index.html" }
+    { "source": "/depeg/:path((?!replay\\.json$|sim-template\\.csv$).*)", "destination": "/index.html" }
   ]
 }
