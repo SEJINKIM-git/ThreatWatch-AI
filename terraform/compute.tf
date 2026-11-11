@@ -6,7 +6,7 @@
 # Lambda가 자동 생성하도록 두면 보존 기간이 "무기한"이 되어 로그 비용이 계속 쌓입니다.
 resource "aws_cloudwatch_log_group" "lambda" {
   name              = "/aws/lambda/${local.prefix}-triage"
-  retention_in_days = 14
+  retention_in_days = 30
 }
 
 resource "aws_lambda_function" "triage" {
