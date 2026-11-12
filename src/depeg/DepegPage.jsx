@@ -147,8 +147,8 @@ function Hero({ data, L, lang }) {
              sub={fmtTime(s.low.t, lang)} />
         <Kpi label={L("최대 이탈폭", "Max deviation")} value={fmtBps(s.low.bps)}
              sub={L("1달러 대비 −13.7%", "−13.7% from $1")} />
-        <Kpi label={L("실데이터 최고 점수", "Peak score, real data")}
-             value={<>{s.crisis_max_score_full}<span style={{ fontSize: 15, color: "var(--faint)" }}> / {data.thresholds.alert}</span></>}
+        <Kpi label={L("실데이터 최고 점수 (뉴스 포함)", "Peak score, real data (with news)")}
+             value={<>{s.crisis_max_score_news}<span style={{ fontSize: 15, color: "var(--faint)" }}> / {data.thresholds.alert}</span></>}
              sub={L("경보 기준 미달 — 아래에서 이유 설명", "Below the alert line — see why below")}
              tone="warn" />
         <Kpi label={L("평상시 4주 최고 점수", "Peak score, calm 4 weeks")} value={s.calm_max_score}
@@ -322,7 +322,12 @@ function Replay({ data, L, lang }) {
   const times = crisis.map((p) => p.t);
   const lowIdx = times.indexOf(data.summary.low.t);
   const firstIdx = times.indexOf(data.summary.first_minus_50bps);
-  const peakIdx = crisis.reduce((best, d, i) => (d.score_full > crisis[best].score_full ? i : best), 0);
+  const peakIdx = crisis.reduce((best, d, i) => (d.score_news > crisis[best].score_news ? i : best), 0);
+  const news = data.summary.news;
+  const newsBands = useMemo(() => news.on_segments.map((g) => ({
+    from: times.indexOf(g.from), to: times.indexOf(g.to), color: SERIES.newsBand,
+    label: L("뉴스 신호 켜짐", "News signal on"),
+  })), [news, times, lang]); // eslint-disable-line react-hooks/exhaustive-deps
   const [idx, setIdx] = useState(lowIdx >= 0 ? lowIdx : 0);
   const [playing, setPlaying] = useState(false);
 
@@ -339,16 +344,18 @@ function Replay({ data, L, lang }) {
 
   const p = crisis[idx];
   const thr = data.thresholds;
-  const verdict = p.score_full >= thr.approval ? "high" : p.score_full >= thr.alert ? "alert" : "ok";
+  const verdict = p.score_news >= thr.approval ? "high" : p.score_news >= thr.alert ? "alert" : "ok";
   const hoursBefore = lowIdx - firstIdx;
+  const newsHoursBefore = news.streak_hours_before_low;
 
   const priceSeries = useMemo(() => [{
     key: "price", label: L("USDC 가격", "USDC price"), color: SERIES.price, values: crisis.map((d) => d.price),
   }], [crisis, lang]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const scoreSeries = useMemo(() => [
-    { key: "sp", label: L("가격만", "Price only"), color: SERIES.scorePrice, values: crisis.map((d) => d.score_price) },
-    { key: "sf", label: L("가격 + 공시", "Price + filings"), color: SERIES.scoreFull, values: crisis.map((d) => d.score_full) },
+    { key: "sp", label: L("가격만", "Price only"), short: L("가격만", "Price"), color: SERIES.scorePrice, values: crisis.map((d) => d.score_price) },
+    { key: "sf", label: L("가격 + 공시", "Price + filings"), short: L("+공시", "+filings"), color: SERIES.scoreFull, values: crisis.map((d) => d.score_full) },
+    { key: "sn", label: L("가격 + 공시 + 뉴스", "Price + filings + news"), short: L("+뉴스", "+news"), color: SERIES.scoreNews, values: crisis.map((d) => d.score_news) },
   ], [crisis, lang]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refLines = [
@@ -386,6 +393,8 @@ function Replay({ data, L, lang }) {
           <div className="dp-legend">
             <span><i style={{ background: SERIES.scorePrice }} />{L("가격만", "Price only")}</span>
             <span><i style={{ background: SERIES.scoreFull }} />{L("가격 + 공시", "Price + filings")}</span>
+            <span><i style={{ background: SERIES.scoreNews }} />{L("가격 + 공시 + 뉴스", "Price + filings + news")}</span>
+            <span><i style={{ background: SERIES.newsBand, outline: `1px solid ${SERIES.scoreNews}` }} />{L("뉴스 신호 켜진 시간", "News signal on")}</span>
             <span style={{ color: INK.warn }}><i className="dash" />{L("경보 기준", "Alert line")}</span>
             <span style={{ color: INK.bad }}><i className="dash" />{L("사람 승인 기준", "Approval line")}</span>
           </div>
@@ -394,8 +403,9 @@ function Replay({ data, L, lang }) {
             yTicks={[0, 25, 50, 75, 100]} formatY={(v) => String(v)}
             refLines={refLines}
             markers={[
-              { i: peakIdx, v: crisis[peakIdx].score_full, label: L(`최고 ${crisis[peakIdx].score_full}점`, `Peak ${crisis[peakIdx].score_full}`), color: SERIES.scoreFull, dy: -10 },
+              { i: peakIdx, v: crisis[peakIdx].score_news, label: L(`최고 ${crisis[peakIdx].score_news}점`, `Peak ${crisis[peakIdx].score_news}`), color: SERIES.scoreNews, dy: -10, anchor: "end" },
             ]}
+            bands={newsBands} endLabels
             hoverIdx={idx} onHover={setIdx} height={230}
             ariaLabel={L("시간별 위험 점수와 경보 기준선", "Hourly risk score with alert thresholds")}
           />
@@ -427,11 +437,23 @@ function Replay({ data, L, lang }) {
 
             <div className="dp-inner" style={{ marginTop: 18 }}>
               <div className="dp-row">
-                <span className="dp-small">{L("위험 점수 (가격 + 공시)", "Score (price + filings)")}</span>
-                <span className="dp-small dp-num">{L("가격만", "price only")} {p.score_price}</span>
+                <span className="dp-small">{L("위험 점수 (가격 + 공시 + 뉴스)", "Score (price + filings + news)")}</span>
+                <span className="dp-small dp-num">{L("가격만", "price only")} {p.score_price} · {L("+공시", "+filings")} {p.score_full}</span>
               </div>
-              <p className="dp-big" style={{ margin: "10px 0 16px" }}>{p.score_full}</p>
+              <p className="dp-big" style={{ margin: "10px 0 16px" }}>{p.score_news}</p>
               <FactorBars factors={p.factors} labelOf={(m) => METRIC[m]?.[lang] ?? m} />
+            </div>
+
+            <div className="dp-inner" style={{ marginTop: 12 }}>
+              <div className="dp-row">
+                <span className="dp-small">{L("뉴스 신호 (지난 24시간 기사)", "News signal (last 24h)")}</span>
+                <span className="dp-small dp-num">{p.news === 1 ? L("켜짐", "on") : p.news === 0 ? L("꺼짐", "off") : "—"}</span>
+              </div>
+              {p.news_top && (
+                <p className="dp-small" style={{ margin: "8px 0 0" }}>
+                  {p.news_top.tier} · {p.news_top.outlet} — “{p.news_top.title}”
+                </p>
+              )}
             </div>
 
             <div className={`dp-verdict ${verdict}`} style={{ marginTop: 12 }}>
@@ -451,27 +473,31 @@ function Replay({ data, L, lang }) {
       <div className="dp-insights">
         <div className="dp-insight">
           <p className="dp-label">{L("가격만 볼 때 한계", "Price-only lead time")}</p>
-          <p className="dp-num" style={{ margin: "10px 0 6px" }}>{L(`최대 ${hoursBefore}시간 전`, `≤ ${hoursBefore} hours`)}</p>
+          <p className="dp-num" style={{ margin: "10px 0 6px" }}>
+            {L(`가격만 최대 ${hoursBefore}시간 전 → 뉴스 포함 ${newsHoursBefore}시간 전`, `Price only ≤ ${hoursBefore} h → with news ${newsHoursBefore} h`)}
+          </p>
           <p className="dp-small" style={{ margin: 0 }}>
             {L(
-              `처음 −50bps를 넘은 ${fmtTime(data.summary.first_minus_50bps, lang).split(" · ")[0]}부터 최저점까지. 더 일찍 잡으려면 가격보다 먼저 움직이는 데이터가 필요합니다.`,
-              `From the first −50 bps hour to the low. Earlier warning needs signals that move before price.`,
+              `가격은 처음 −50bps를 넘은 ${fmtTime(data.summary.first_minus_50bps, lang).split(" · ")[0]}부터, 뉴스는 끊기지 않고 켜진 ${fmtTime(news.streak_start, lang).split(" · ")[0]}부터 최저점까지. 뉴스 기준표 ${news.rubric_version} · 기사 표 승인 전이라 잠정값입니다.`,
+              `Price: from the first −50 bps hour to the low. News: from the start of its unbroken run (${fmtTime(news.streak_start, lang).split(" · ")[0]}). Rubric ${news.rubric_version} · provisional until the article table is approved.`,
             )}
           </p>
         </div>
         <div className="dp-insight">
           <p className="dp-label">{L("기준선과의 거리", "Gap to the alert line")}</p>
-          <p className="dp-num" style={{ margin: "10px 0 6px" }}>{data.summary.crisis_max_score_full} → {thr.alert}</p>
+          <p className="dp-num" style={{ margin: "10px 0 6px" }}>
+            {L(`현재 최고 ${data.summary.crisis_max_score_news}점 / 기준 ${thr.alert}`, `Peak ${data.summary.crisis_max_score_news} / line ${thr.alert}`)}
+          </p>
           <p className="dp-small" style={{ margin: 0 }}>
-            {L("지금 공식으로는 실제 사태에서도 경보가 울리지 않습니다. 재석의 백테스트가 이 빈칸을 채웁니다.", "With today's formula, even the real crisis never triggers. The backtest is what closes this gap.")}
+            {L("뉴스가 리드타임은 늘렸지만 점수 공식이 그대로라 기준선을 넘지 못합니다. 재석의 비중 재설계를 기다리는 중입니다.", "News lengthens the lead time, but the formula is unchanged, so the line is still not reached. Waiting on Jaeseok's reweighting.")}
           </p>
         </div>
         <div className="dp-insight">
           <p className="dp-label">{L("평상시 4주", "Calm four weeks")}</p>
           <p className="dp-num" style={{ margin: "10px 0 6px" }}>{L(`최고 ${data.summary.calm_max_score}점`, `Peak ${data.summary.calm_max_score}`)}</p>
           <p className="dp-small" style={{ margin: 0 }}>
-            {L(`2023년 1~2월, 1달러에서 최대 ${data.summary.calm_max_abs_bps}bps만 벗어났습니다. 잘못 울린 경보 ${data.summary.calm_hours_breached}회.`,
-               `Jan–Feb 2023 never moved more than ${data.summary.calm_max_abs_bps} bps from $1. ${data.summary.calm_hours_breached} false alarms.`)}
+            {L(`2023년 1~2월, 1달러에서 최대 ${data.summary.calm_max_abs_bps}bps만 벗어났습니다. 잘못 울린 경보 ${data.summary.calm_hours_breached}회. 가격만 본 값이며, 평상시 뉴스는 아직 미반영입니다.`,
+               `Jan–Feb 2023 never moved more than ${data.summary.calm_max_abs_bps} bps from $1. ${data.summary.calm_hours_breached} false alarms. Price only — calm-period news is not included yet.`)}
           </p>
           <div style={{ marginTop: 12 }}>
             <LineChart compact
@@ -491,6 +517,7 @@ function Replay({ data, L, lang }) {
             <thead><tr>
               <th>{L("시각", "Hour")}</th><th>{L("가격", "Price")}</th><th>bps</th>
               <th>{L("점수(가격만)", "Score (price)")}</th><th>{L("점수(+공시)", "Score (+filings)")}</th>
+              <th>{L("뉴스", "News")}</th><th>{L("점수(+뉴스)", "Score (+news)")}</th>
             </tr></thead>
             <tbody>
               {crisis.map((r) => (
@@ -498,6 +525,7 @@ function Replay({ data, L, lang }) {
                   <td>{fmtTime(r.t, lang).split(" · ")[0]}</td>
                   <td>{r.price.toFixed(4)}</td><td>{r.bps}</td>
                   <td>{r.score_price}</td><td>{r.score_full}</td>
+                  <td>{r.news === 1 ? L("켜짐", "on") : r.news === 0 ? L("꺼짐", "off") : "—"}</td><td>{r.score_news}</td>
                 </tr>
               ))}
             </tbody>
@@ -630,7 +658,7 @@ function Footer({ data, L }) {
     <footer className="dp-foot">
       {L("데이터", "Data")}: Bitstamp USDC/USD 1h OHLC (2023-01-15 ~ 02-12, 2023-03-09 ~ 03-14) ·
       Circle USDC {data.attestation.report} {L("준비금 보고서", "reserve report")} ({L("발행", "published")} {data.attestation.published_at.slice(0, 10)}, {L("손 검증값", "hand-verified")})<br />
-      {L("엔진", "Engine")}: depeg-early-warning @{data.engine_commit} · {L("임시 공식(베이스라인) 가중치", "baseline weights")} {Object.entries(data.weights).map(([k, v]) => `${k} ${v}`).join(", ")}<br />
+      {L("엔진", "Engine")}: depeg-early-warning @{data.engine_commit} · {L("뉴스 기준표", "news rubric")} {data.news_rubric_version} · {L("임시 공식(베이스라인) 가중치", "baseline weights")} {Object.entries(data.weights).map(([k, v]) => `${k} ${v}`).join(", ")}<br />
       {L("생성", "Generated")} {data.generated_at} · scripts/build_depeg_replay.py · {L("점수는 실제 엔진 출력이며, 이 화면은 계산하지 않습니다.", "Scores are real engine output; this page computes nothing.")}
     </footer>
   );
