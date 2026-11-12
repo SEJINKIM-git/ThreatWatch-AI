@@ -13,6 +13,6 @@
     { "source": "/workspace", "destination": "/index.html" },
     { "source": "/workspace/:path*", "destination": "/index.html" },
     { "source": "/depeg", "destination": "/index.html" },
-    { "source": "/depeg/:path((?!replay\\.json$|sim-template\\.csv$).*)", "destination": "/index.html" }
+    { "source": "/depeg/:path((?!replay\\.json$|sim-template\\.csv$|sim-rehearsal\\.csv$).*)", "destination": "/index.html" }
   ]
 }
