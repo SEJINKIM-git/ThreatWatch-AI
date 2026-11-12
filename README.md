@@ -12,7 +12,7 @@ LLM-powered security alert triage dashboard with a presentation-friendly scenari
 
 ### Depeg Early Warning (`/depeg`)
 
-Explains the stablecoin depeg early-warning system that sits on top of ThreatWatch (Phase A): the ten steps from market data to the human approval outcome with owners and status, an hour-by-hour replay of the March 2023 USDC depeg, and the literal alert the adapter sends into ThreatWatch.
+Shows the stablecoin depeg early-warning system that sits on top of ThreatWatch (Phase A): headline numbers, today's live analysis, an hour-by-hour replay of the March 2023 USDC depeg, a simulated crisis with human approval, and the literal alert the adapter sends into ThreatWatch.
 
 The page computes nothing. Every number comes from `public/depeg/replay.json`, which `scripts/build_depeg_replay.py` produces by calling the real engine (`compute_risk_score`) and adapter (`to_alert_request`) in the `depeg-early-warning` repository. Regenerate it whenever the engine or data changes:
 
@@ -21,7 +21,6 @@ The page computes nothing. Every number comes from `public/depeg/replay.json`, w
 python scripts/build_depeg_replay.py --engine-repo ../depeg-early-warning --out public/depeg/replay.json
 ```
 
-Step status labels are maintained by hand in `src/depeg/content.js` (`STATUS_AS_OF`).
 
 Scene 2 has three score lines: price only, + filings, and + news (`score_news`, from the engine's `data/historical/signals_usdc_2023_news_hourly.json`, news rubric version recorded in `summary.news`). The script imports the engine's weights and rubric and copies none of them, so **when the engine's weights or rubric change on `main`** (e.g. the reweighting):
 1. `scripts/sync_depeg_engine.sh ../depeg-early-warning` — refresh the live copies (engine, adapter, news rubric).
