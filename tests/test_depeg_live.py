@@ -23,8 +23,8 @@ def news_flag(articles):
     return news_rubric.news_flag(articles, LIVE_PARTIES)
 
 
-def test_rubric_is_engine_v2_copy():
-    assert news_rubric.RUBRIC_VERSION == "v2"
+def test_rubric_is_engine_v2_1_copy():
+    assert news_rubric.RUBRIC_VERSION == "v2.1"
     with open(news_rubric.__file__, encoding="utf-8") as f:
         assert f.readline().startswith("# AUTO-COPIED from depeg-early-warning/src/intelligence/news_rubric.py")
 
@@ -32,7 +32,7 @@ def test_rubric_is_engine_v2_copy():
 def test_live_uses_counterparties_at_now():
     out = analyze([candle(6, 1.0)], [{"title": "Cross River Bank collapses as FDIC takes control"}], NOW)
     news = out["inputs"]["news"]
-    assert news["flag"] == 1 and news["rubric"] == "v2"
+    assert news["flag"] == 1 and news["rubric"] == "v2.1"
     assert news["counterparties"]["report"] == "2026-09" and news["counterparties"]["banks_from"] == "2023-03"
 
 
@@ -149,3 +149,11 @@ def test_old_articles_and_stale_price():
     stale = analyze([candle(2, 1.0)], [], NOW)
     assert stale["inputs"]["price_stale"] is True
     assert analyze([candle(6, 1.0)], [], NOW)["inputs"]["price_stale"] is False
+
+
+def test_live_false_positive_2026_11_12_is_quiet():
+    """장면 1에서 보관처 위기로 잘못 켜졌던 실제 제목 (v2.1에서 수정). 동명 펀드의 공매도 잔고 감소 기사다."""
+    title = "BNY Mellon High Yield Strategies Fund (NYSE:DHF) Stock Short Interest Falls 73.8%"
+    assert classify(title) is None
+    out = analyze([candle(6, 1.0)], [{"title": title}], NOW)
+    assert out["inputs"]["news"]["flag"] == 0

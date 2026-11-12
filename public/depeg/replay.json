@@ -1,7 +1,7 @@
 {
- "generated_at": "2026-11-12T11:54:08Z",
- "engine_commit": "2607352",
- "news_rubric_version": "v2",
+ "generated_at": "2026-11-12T12:11:44Z",
+ "engine_commit": "8ef6cac",
+ "news_rubric_version": "v2.1",
  "thresholds": {
   "alert": 70.0,
   "approval": 85.0
@@ -1360,10 +1360,10 @@
    "score_news": 14.44,
    "news": 1,
    "news_top": {
-    "title": "Silicon Valley Bank plunges 60% before halt, Signature trading stopped shortly after open",
-    "outlet": "The Block",
+    "title": "Startup world spooked as Silicon Valley Bank races to prevent bank run",
+    "outlet": "The Irish Times (Financial Times syndication)",
     "tier": "B",
-    "published_at": "2023-03-10T14:56:03Z"
+    "published_at": "2023-03-10T10:29:41Z"
    },
    "factors": [
     {
@@ -1395,10 +1395,10 @@
    "score_news": 14.44,
    "news": 1,
    "news_top": {
-    "title": "Silicon Valley Bank plunges 60% before halt, Signature trading stopped shortly after open",
-    "outlet": "The Block",
+    "title": "Startup world spooked as Silicon Valley Bank races to prevent bank run",
+    "outlet": "The Irish Times (Financial Times syndication)",
     "tier": "B",
-    "published_at": "2023-03-10T14:56:03Z"
+    "published_at": "2023-03-10T10:29:41Z"
    },
    "factors": [
     {
@@ -8250,8 +8250,8 @@
   },
   "news": {
    "file": "data/historical/signals_usdc_2023_news_hourly.json",
-   "rubric_version": "v2",
-   "engine_rubric_version": "v2",
+   "rubric_version": "v2.1",
+   "engine_rubric_version": "v2.1",
    "hours_on": 114,
    "on_segments": [
     {
@@ -8335,7 +8335,7 @@
    }
   ],
   "event": {
-   "event_id": "9991876a-d0c7-45bc-9d07-1c357e363549",
+   "event_id": "a5aec453-bbcf-46cb-82c4-6cb03f702a2d",
    "coin": "USDC",
    "scored_at": "2023-03-11T08:00:00Z",
    "risk_score": 93.0,
@@ -8365,7 +8365,7 @@
    "threshold_breached": true
   },
   "alert": {
-   "alert_id": "9991876a-d0c7-45bc-9d07-1c357e363549",
+   "alert_id": "a5aec453-bbcf-46cb-82c4-6cb03f702a2d",
    "incident_type": "stablecoin_depeg_risk_usdc",
    "severity": "high",
    "timestamp": "2023-03-11T08:00:00Z",
@@ -8379,7 +8379,7 @@
    "description": "USDC depeg risk score 93.0 (confidence 1.00)"
   },
   "calm_event": {
-   "event_id": "746db97e-c7d9-4eda-9d69-c35ce4868c19",
+   "event_id": "961accde-eb7e-4937-bdc3-b53eb64cbb2e",
    "coin": "USDC",
    "scored_at": "2023-03-11T02:00:00Z",
    "risk_score": 28.8,
