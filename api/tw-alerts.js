@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { checkDemoKey } from "./_lib/demo-key.js";
 
 /**
  * 알림 전송 프록시
@@ -10,6 +11,8 @@ import crypto from "node:crypto";
  *   TW_API_URL     API Gateway 베이스 URL (스테이지까지, 끝 슬래시 없이)
  *   TW_API_KEY     API 키
  *   TW_HMAC_SECRET 공유 시크릿
+ *   DEPEG_DEMO_KEY 시연 비밀번호. 요청 헤더 x-demo-key 가 이 값과 같아야 전송한다
+ *                  (공개 사이트에서 아무나 운영 ThreatWatch로 서명된 경보를 보내지 못하게)
  */
 
 const REQUIRED_FIELDS = ["incident_type", "severity"];
@@ -54,6 +57,12 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  // 서명·전송 전에 시연 비밀번호부터 확인한다. 키 값은 응답·로그에 넣지 않는다.
+  const gate = checkDemoKey(process.env.DEPEG_DEMO_KEY, req.headers?.["x-demo-key"]);
+  if (!gate.ok) {
+    return res.status(gate.status).json({ error: gate.error });
   }
 
   const baseUrl = process.env.TW_API_URL;

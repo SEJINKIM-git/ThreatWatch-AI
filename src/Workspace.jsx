@@ -22,6 +22,9 @@ export default function Workspace() {
 
   const [preset, setPreset] = useState(PRESETS[0].key);
   const [sending, setSending] = useState(false);
+  // 시연 비밀번호 — React 상태(메모리)에만 둔다. localStorage·URL·저장소에 남기지 않는다.
+  const [demoKey, setDemoKey] = useState("");
+  const [keyError, setKeyError] = useState(null);
   const [stageState, setStageState] = useState({});
   const [runLog, setRunLog] = useState([]);
   const [activeCase, setActiveCase] = useState(null);
@@ -106,13 +109,14 @@ export default function Workspace() {
     const payload = { alert_id: alertId, ...chosen.payload };
 
     setSending(true);
+    setKeyError(null);
     setActiveCase(null);
     setRunLog([]);
     setStageState({ signed: "active" });
     log(`Submitting ${alertId}`);
 
     try {
-      await api.sendAlert(payload);
+      await api.sendAlert(payload, demoKey);
 
       // 202를 받았다는 것은 서명 검증과 스키마 검증을 통과하고
       // 큐에 적재됐다는 뜻입니다.
@@ -157,6 +161,13 @@ export default function Workspace() {
         }
       }, POLL_INTERVAL_MS);
     } catch (e) {
+      if (e.status === 401 || e.status === 503) {
+        setKeyError(
+          e.status === 503
+            ? "이 배포에 시연 비밀번호가 설정되지 않아 전송할 수 없습니다"
+            : demoKey ? "시연 비밀번호가 틀렸습니다" : "시연 비밀번호가 필요합니다",
+        );
+      }
       setStageState((s) => ({
         ...s,
         signed: "error",
@@ -214,6 +225,7 @@ export default function Workspace() {
           <RunPanel
             preset={preset} setPreset={setPreset}
             sending={sending} onRun={run}
+            demoKey={demoKey} setDemoKey={setDemoKey} keyError={keyError}
             stageState={stageState} runLog={runLog} activeCase={activeCase}
           />
 
@@ -345,7 +357,9 @@ function Header() {
   );
 }
 
-function RunPanel({ preset, setPreset, sending, onRun, stageState, runLog, activeCase }) {
+function RunPanel({
+  preset, setPreset, sending, onRun, stageState, runLog, activeCase, demoKey, setDemoKey, keyError,
+}) {
   const chosen = PRESETS.find((p) => p.key === preset);
 
   return (
@@ -378,6 +392,24 @@ function RunPanel({ preset, setPreset, sending, onRun, stageState, runLog, activ
           {chosen.payload.description}
         </p>
       )}
+
+      <label style={{ display: "grid", gap: "6px" }}>
+        <span style={label()}>Demo password · 시연 비밀번호</span>
+        <input
+          type="password" value={demoKey} onChange={(e) => setDemoKey(e.target.value)}
+          autoComplete="off" disabled={sending} placeholder="required to send"
+          aria-invalid={Boolean(keyError)}
+          style={{
+            fontFamily: MONO_FONT, fontSize: "13px", padding: "9px 11px", borderRadius: "8px",
+            border: `1px solid ${keyError ? "#ff5c6c" : C.border}`, background: "transparent", color: "inherit",
+          }}
+        />
+        {keyError && (
+          <span role="alert" style={{ fontFamily: BODY_FONT, fontSize: "12px", color: "#ff5c6c" }}>
+            {keyError}
+          </span>
+        )}
+      </label>
 
       <button onClick={onRun} disabled={sending} style={runBtn(sending)}>
         {sending ? "Running…" : "Run through pipeline"}
