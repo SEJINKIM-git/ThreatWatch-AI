@@ -1,4 +1,4 @@
-# AUTO-COPIED from depeg-early-warning/src/adapters/threatwatch_sender.py @9d8cc01
+# AUTO-COPIED from depeg-early-warning/src/adapters/threatwatch_sender.py @2607352
 # 직접 고치지 말 것 — 엔진 저장소에서 고친 뒤 scripts/sync_depeg_engine.sh 로 다시 복사
 """ThreatWatch 어댑터 — score_event를 AlertRequest로 변환한다.
 

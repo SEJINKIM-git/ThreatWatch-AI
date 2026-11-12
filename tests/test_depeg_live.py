@@ -6,9 +6,34 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "api", "_depeg"))
 
 from live_core import analyze, completed_candles  # noqa: E402
-from news_rubric import classify, news_flag  # noqa: E402
+import news_rubric  # noqa: E402
 
 NOW = datetime(2026, 11, 11, 7, 20, tzinfo=timezone.utc)
+
+# 기준표는 엔진 v2 복사본이라 보관처 목록을 인자로 받는다. 아래 사례는 모두 실시간 화면 기준이므로
+# 실시간 분석(live_core)과 똑같이 그 시각에 공개돼 있던 목록을 넘긴다. 기대값은 v0.2 때와 같다.
+LIVE_PARTIES = news_rubric.counterparties_at("2026-11-11T00:00:00Z")["names"]
+
+
+def classify(title):
+    return news_rubric.classify(title, LIVE_PARTIES)
+
+
+def news_flag(articles):
+    return news_rubric.news_flag(articles, LIVE_PARTIES)
+
+
+def test_rubric_is_engine_v2_copy():
+    assert news_rubric.RUBRIC_VERSION == "v2"
+    with open(news_rubric.__file__, encoding="utf-8") as f:
+        assert f.readline().startswith("# AUTO-COPIED from depeg-early-warning/src/intelligence/news_rubric.py")
+
+
+def test_live_uses_counterparties_at_now():
+    out = analyze([candle(6, 1.0)], [{"title": "Cross River Bank collapses as FDIC takes control"}], NOW)
+    news = out["inputs"]["news"]
+    assert news["flag"] == 1 and news["rubric"] == "v2"
+    assert news["counterparties"]["report"] == "2026-09" and news["counterparties"]["banks_from"] == "2023-03"
 
 
 def candle(hour, close):

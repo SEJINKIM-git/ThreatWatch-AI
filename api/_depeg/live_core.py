@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import risk_score as engine
-from news_rubric import news_flag
+from news_rubric import RUBRIC_VERSION, counterparties_at, news_flag
 
 # 최신 Circle 준비금 보고서 (2026-09, 2026-10-26 발행) — 09-30 기준일 값.
 # 출처: depeg-early-warning/docs/offchain_attestation_anatomy.md §1-8 (손 검증값, 조정 반영 현금 비중)
@@ -112,7 +112,10 @@ def analyze(ohlc: list[dict[str, Any]], articles: list[dict[str, Any]], now: dat
     # 24시간 안의 기사만 본다 (출처 쪽 기간 필터에만 기대지 않음). 시각을 모르는 기사는 남긴다.
     cutoff = (now - timedelta(hours=24)).strftime("%Y%m%dT%H%M%SZ")
     articles = [a for a in articles if not a.get("seen") or a["seen"] >= cutoff]
-    flag, matched = news_flag(articles)
+    # 보관처 목록은 지금 시각에 공개돼 있던 최신 Circle 보고서 기준 (엔진과 같은 규칙).
+    # 2026년 보고서는 은행 이름이 없어 이름이 나온 마지막 목록(2023-03-31: BNY Mellon·Cross River·Customers)을 이어 쓴다.
+    parties = counterparties_at(iso(now))
+    flag, matched = news_flag(articles, parties["names"])
     if news_error:
         flag, matched = None, []
     signals = build_signals(latest, flag, now)
@@ -138,6 +141,8 @@ def analyze(ohlc: list[dict[str, Any]], articles: list[dict[str, Any]], now: dat
                 "matched": matched[:12],
                 "error": news_error,
                 "source": f"{news_source} · last 24h",
+                "rubric": RUBRIC_VERSION,
+                "counterparties": parties,
             },
         },
         "recipients": recipients(score),
