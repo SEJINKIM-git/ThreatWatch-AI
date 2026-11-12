@@ -1,11 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./depeg.css";
 import { LineChart, FactorBars, SERIES, INK } from "./charts.jsx";
 import LiveNow from "./LiveNow.jsx";
 import SimCrisis from "./SimCrisis.jsx";
-import {
-  STATUS, STATUS_AS_OF, LANES, STEPS, APPROVAL_TIMELINE, OUTCOMES, GAPS,
-} from "./content.js";
+import { APPROVAL_TIMELINE, OUTCOMES } from "./content.js";
 
 /**
  * /depeg — ThreatWatch 위에 얹은 디페그 조기경보 시스템 설명 화면
@@ -49,7 +47,6 @@ const fmtBps = (v) => `${v > 0 ? "+" : ""}${Math.round(v).toLocaleString()} bps`
 export default function DepegPage() {
   const [lang, setLang] = useState(readLang);
   const L = (ko, en) => (lang === "ko" ? ko : en);
-  const pick = (o) => (o ? o[lang] ?? o.ko : "");
 
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -87,11 +84,9 @@ export default function DepegPage() {
       <main className="dp-main">
         <Hero data={data} L={L} lang={lang} />
         <LiveNow L={L} lang={lang} fmtTime={fmtTime} labelOf={(m) => METRIC[m]?.[lang] ?? m} />
-        <HowItWorks data={data} L={L} pick={pick} lang={lang} />
         <Replay data={data} L={L} lang={lang} />
         <SimCrisis L={L} lang={lang} fmtTime={fmtTime} labelOf={(m) => METRIC[m]?.[lang] ?? m} />
         <Handoff data={data} L={L} lang={lang} />
-        <Gaps L={L} pick={pick} lang={lang} />
         <Footer data={data} L={L} />
       </main>
     </div>
@@ -131,17 +126,7 @@ function Header({ lang, setLang, L }) {
 function Hero({ data, L, lang }) {
   const s = data.summary;
   return (
-    <section className="dp-hero">
-      <div>
-        <p className="dp-label">Phase A · {L("디페그 연동", "Depeg integration")}</p>
-        <h1 className="dp-h1">{L("ThreatWatch 위에 얹은 디페그 조기경보", "A depeg early warning on top of ThreatWatch")}</h1>
-        <p className="dp-lede">
-          {L(
-            "스테이블코인 USDC가 1달러에서 벗어날 조짐을 데이터로 먼저 잡아, ThreatWatch의 기존 경보·승인 흐름으로 넘깁니다. 보안 경보와 같은 길을 쓰지만, 위험 판정은 디페그 엔진이 하고 AI는 다시 채점하지 않습니다.",
-            "Spot the signs of USDC slipping off $1 early, then hand the alert to ThreatWatch's existing alert and approval flow. Same road as security alerts — but the depeg engine owns the verdict, and the LLM does not re-score it.",
-          )}
-        </p>
-      </div>
+    <section className="dp-hero dp-hero--kpis">
       <div className="dp-kpis">
         <Kpi label={L("2023년 3월 최저가", "March 2023 low")} value={`$${s.low.price.toFixed(4)}`}
              sub={fmtTime(s.low.t, lang)} />
@@ -165,151 +150,6 @@ function Kpi({ label, value, sub, tone }) {
       <p className="dp-kpi-v" style={tone === "warn" ? { color: "var(--warn)" } : undefined}>{value}</p>
       <p className="dp-kpi-s">{sub}</p>
     </div>
-  );
-}
-
-// =============================================================
-// 작동 방식 (①~⑧)
-// =============================================================
-
-function HowItWorks({ data, L, pick, lang }) {
-  const [selected, setSelected] = useState("score");
-  const [lit, setLit] = useState(-1);
-  const [log, setLog] = useState([]);
-  const timer = useRef(null);
-  const detailRef = useRef(null);
-
-  // 한 줄 배치(좁은 화면)에서는 설명 패널이 단계 목록 아래로 멀어지므로 스크롤해 준다.
-  function choose(key) {
-    setSelected(key);
-    if (window.matchMedia?.("(max-width: 1080px)").matches) {
-      requestAnimationFrame(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
-    }
-  }
-  const running = lit >= 0 && lit < STEPS.length;
-
-  useEffect(() => () => clearTimeout(timer.current), []);
-
-  const mock = data.mock;
-  const tw = data.tw_severity_map[mock.alert?.severity] || {};
-  const top = mock.event.top_factors.slice(0, 2).map((f) => METRIC[f.metric]?.[lang] ?? f.metric).join(", ");
-
-  // 샘플 경보가 각 단계에서 남기는 한 줄 — 값은 실제 엔진이 mock에 대해 낸 결과
-  const lines = {
-    market: L(`가격 $${mock.signals[0].value}, 이탈폭 ${fmtBps(mock.signals[1].value)}`, `Price $${mock.signals[0].value}, deviation ${fmtBps(mock.signals[1].value)}`),
-    filing: L("준비금 현금 비중 20%, 뉴스 위험 신호 있음", "Reserve cash 20%, news risk flag on"),
-    score: L(`위험 점수 ${mock.event.risk_score}점 (주요 원인: ${top})`, `Risk score ${mock.event.risk_score} (driven by ${top})`),
-    gate: L(`${data.thresholds.approval}점 이상 → 등급 '높음(high)'`, `≥ ${data.thresholds.approval} → severity "high"`),
-    adapter: L(`경보 생성: ${mock.alert?.incident_type}`, `Alert built: ${mock.alert?.incident_type}`),
-    intake: L("서명·양식 확인 통과, 대기열 진입", "Signature and schema OK, queued"),
-    triage: L(`AI 건너뜀 · high → ${tw.level} (${tw.score}점)`, `LLM skipped · high → ${tw.level} (${tw.score})`),
-    route: L("사건 기록, 디페그 전용 채널로 알림", "Case stored, depeg channel notified"),
-    approve: L("P1 → 승인자에게 요청, 응답 대기", "P1 → approval requested, waiting"),
-    outcome: L("승인 / 반려 / 만료 중 하나로 끝남", "Ends as approve / reject / expire"),
-  };
-
-  function run() {
-    clearTimeout(timer.current);
-    setLog([]);
-    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    const delay = reduce ? 0 : 650;
-    const step = (i) => {
-      setLit(i);
-      if (i < STEPS.length) {
-        setSelected(STEPS[i].key);
-        setLog((prev) => [...prev, { num: STEPS[i].num, title: pick(STEPS[i].title), text: lines[STEPS[i].key] }]);
-        timer.current = setTimeout(() => step(i + 1), delay);
-      }
-    };
-    step(0);
-  }
-
-  const sel = STEPS.find((s) => s.key === selected);
-
-  return (
-    <section className="dp-section" id="how">
-      <p className="dp-label">{L("작동 방식", "How it works")}</p>
-      <h2 className="dp-h2">{L("데이터가 경보가 되기까지 10단계", "From data to decision in ten steps")}</h2>
-      <p className="dp-lede" style={{ fontSize: 15.5 }}>
-        {L(
-          "왼쪽은 이번 학기에 새로 만드는 부분, 오른쪽은 이미 있는 ThreatWatch입니다. 두 시스템은 '경보 양식' 하나로만 연결되므로 서로의 코드를 몰라도 됩니다. 단계를 누르면 설명이 나옵니다.",
-          "Left is what we are building this term; right is the existing ThreatWatch. They meet at one thing — the alert format — so neither side needs to know the other's code. Click a step for details.",
-        )}
-      </p>
-
-      <div className="dp-flow">
-        {LANES.map((lane) => (
-          <div key={lane.key} className="dp-lane">
-            <div className="dp-lane-head">
-              <p className="dp-h3">{pick(lane)}</p>
-              <span className="dp-small" style={{ color: "var(--faint)" }}>{lang === "ko" ? lane.subKo : lane.subEn}</span>
-            </div>
-            <div className="dp-steps">
-              {STEPS.filter((s) => s.lane === lane.key).map((s) => {
-                const idx = STEPS.indexOf(s);
-                const st = STATUS[s.status];
-                const cls = ["dp-step", idx === lit ? "is-lit" : "", lit > idx ? "is-passed" : ""].join(" ");
-                return (
-                  <button key={s.key} type="button" className={cls}
-                          aria-pressed={selected === s.key} onClick={() => choose(s.key)}>
-                    <span className="dp-step-num">{s.num}</span>
-                    <span>
-                      <p className="dp-step-title">{pick(s.title)}</p>
-                      <p className="dp-step-short">{pick(s.short)}</p>
-                    </span>
-                    <span className="dp-step-meta">
-                      <span className={`dp-chip ${st.tone}`}>{st[lang]}</span>
-                      <span className="dp-owner">{pick(s.owner)}</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {sel && (
-        <div ref={detailRef} className="dp-panel dp-detail" style={{ marginTop: 16, scrollMarginTop: 96 }}>
-          <div>
-            <p className="dp-label">{sel.num} · {pick(sel.owner)}</p>
-            <p className="dp-h3" style={{ marginTop: 10, fontSize: 20 }}>{pick(sel.title)}</p>
-            <p className="dp-body" style={{ marginTop: 12 }}>{pick(sel.what)}</p>
-          </div>
-          <dl className="dp-kv" style={{ margin: 0 }}>
-            <div><dt>{L("들어오는 것", "Input")}</dt><dd>{pick(sel.input)}</dd></div>
-            <div><dt>{L("나가는 것", "Output")}</dt><dd>{pick(sel.output)}</dd></div>
-            <div><dt>{L("코드 위치", "Code")}</dt><dd className="dp-code">{sel.code}</dd></div>
-            <div><dt>{L("상태", "Status")} · {STATUS_AS_OF}</dt>
-              <dd><span className={`dp-chip ${STATUS[sel.status].tone}`}>{STATUS[sel.status][lang]}</span></dd></div>
-          </dl>
-        </div>
-      )}
-
-      <div className="dp-panel-low" style={{ marginTop: 16 }}>
-        <div className="dp-run">
-          <button type="button" className="dp-primary" onClick={run} disabled={running}>
-            {running ? L("흘려보내는 중…", "Running…") : L("샘플 경보 흘려보내기", "Run a sample alert")}
-          </button>
-          <span className="dp-small" style={{ maxWidth: "60ch" }}>
-            {L(
-              "모든 지표가 갖춰진 가상의 위기 상황(mock)을 실제 엔진에 넣은 결과를 단계별로 보여줍니다. 실제 2023년 데이터의 결과는 아래 리플레이에 있습니다.",
-              "Feeds a mock crisis with every signal present through the real engine, step by step. Results on real 2023 data are in the replay below.",
-            )}
-          </span>
-        </div>
-        {log.length > 0 && (
-          <div className="dp-log" aria-live="polite">
-            {log.map((r) => (
-              <div key={r.title} className="dp-log-row">
-                <span className="dp-num" style={{ color: "var(--accent)" }}>{r.num}</span>
-                <span><b>{r.title}</b> — {r.text}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
   );
 }
 
@@ -633,25 +473,6 @@ function Handoff({ data, L, lang }) {
 // =============================================================
 // 남은 빈칸
 // =============================================================
-
-function Gaps({ L, pick, lang }) {
-  return (
-    <section className="dp-section" id="gaps">
-      <p className="dp-label">{L("남은 빈칸", "What's left")} · {STATUS_AS_OF}</p>
-      <h2 className="dp-h2">{L("Demo Day 전에 채워야 할 것", "To close before Demo Day")}</h2>
-      <div className="dp-gaps">
-        {GAPS.map((g, i) => (
-          <div key={i} className="dp-gap">
-            <span className="dp-num" style={{ color: "var(--accent)", fontSize: 13 }}>0{i + 1}</span>
-            <p className="dp-h3">{lang === "ko" ? g.ko : g.en}</p>
-            <p className="dp-body" style={{ fontSize: 13.5 }}>{lang === "ko" ? g.dKo : g.dEn}</p>
-            <span className="dp-owner">{L("담당", "Owner")} · {pick(g.owner)}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 function Footer({ data, L }) {
   return (

@@ -12,7 +12,7 @@ LLM-powered security alert triage dashboard with a presentation-friendly scenari
 
 ### Depeg Early Warning (`/depeg`)
 
-Explains the stablecoin depeg early-warning system that sits on top of ThreatWatch (Phase A): the ten steps from market data to the human approval outcome with owners and status, an hour-by-hour replay of the March 2023 USDC depeg, and the literal alert the adapter sends into ThreatWatch.
+Shows the stablecoin depeg early-warning system that sits on top of ThreatWatch (Phase A): headline numbers, today's live analysis, an hour-by-hour replay of the March 2023 USDC depeg, a simulated crisis with human approval, and the literal alert the adapter sends into ThreatWatch.
 
 The page computes nothing. Every number comes from `public/depeg/replay.json`, which `scripts/build_depeg_replay.py` produces by calling the real engine (`compute_risk_score`) and adapter (`to_alert_request`) in the `depeg-early-warning` repository. Regenerate it whenever the engine or data changes:
 
@@ -21,12 +21,11 @@ The page computes nothing. Every number comes from `public/depeg/replay.json`, w
 python scripts/build_depeg_replay.py --engine-repo ../depeg-early-warning --out public/depeg/replay.json
 ```
 
-Step status labels are maintained by hand in `src/depeg/content.js` (`STATUS_AS_OF`).
 
 Scene 2 has three score lines: price only, + filings, and + news (`score_news`, from the engine's `data/historical/signals_usdc_2023_news_hourly.json`, news rubric version recorded in `summary.news`). The script imports the engine's weights and rubric and copies none of them, so **when the engine's weights or rubric change on `main`** (e.g. the reweighting):
 1. `scripts/sync_depeg_engine.sh ../depeg-early-warning` — refresh the live copies (engine, adapter, news rubric).
 2. `python scripts/build_depeg_replay.py --engine-repo ../depeg-early-warning --out public/depeg/replay.json` — regenerate the replay (engine checked out on `main`).
-3. Open `/depeg`, check the three insight cards and the GAPS text in `src/depeg/content.js` still match the new numbers, then `npx vite build && python -m pytest -q`.
+3. Open `/depeg`, check the three replay insight cards still read correctly with the new numbers, then `npx vite build && python -m pytest -q`.
 
 **Live today (Scene 1).** The top of `/depeg` calls `api/depeg-live.py`, a read-only Python function that pulls the latest completed Bitstamp USDC/USD hourly candles and the last 24 hours of GDELT headlines, classifies headlines with the engine's fixed news rubric v2 (`api/_depeg/news_rubric.py`, a verbatim copy of `src/intelligence/news_rubric.py`, using the custodian list public at that hour — no AI judgement, so results are reproducible), adds the latest hand-verified Circle filing, and scores everything with a verbatim copy of the depeg engine (`api/_depeg/risk_score.py`). It sends nothing and uses no secrets; responses are CDN-cached for 10 minutes. Refresh the engine copy with `scripts/sync_depeg_engine.sh ../depeg-early-warning`. Offline tests: `python -m pytest tests/test_depeg_live.py`.
 
