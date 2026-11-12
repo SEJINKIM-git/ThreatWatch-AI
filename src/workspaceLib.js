@@ -72,7 +72,9 @@ async function req(path, options) {
   }
 
   if (!res.ok) {
-    throw new Error(data.error || `HTTP ${res.status}`);
+    const err = new Error(data.error || `HTTP ${res.status}`);
+    err.status = res.status;
+    throw err;
   }
   return data;
 }
@@ -90,10 +92,11 @@ export const api = {
   getCase: (alertId) =>
     req(`/api/tw-cases?id=${encodeURIComponent(alertId)}`),
 
-  sendAlert: (payload) =>
+  // demoKey: 화면 입력칸의 시연 비밀번호. 메모리에서만 넘기고 어디에도 저장하지 않는다.
+  sendAlert: (payload, demoKey = "") =>
     req("/api/tw-alerts", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-demo-key": demoKey },
       body: JSON.stringify(payload),
     }),
 };
