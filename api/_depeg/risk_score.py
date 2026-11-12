@@ -1,4 +1,4 @@
-# AUTO-COPIED from depeg-early-warning/src/engine/risk_score.py @9d8cc01
+# AUTO-COPIED from depeg-early-warning/src/engine/risk_score.py @2607352
 # 직접 고치지 말 것 — 엔진 저장소에서 고친 뒤 scripts/sync_depeg_engine.sh 로 다시 복사
 """리스크 엔진 스켈레톤 — 역할 3(리스크 엔진 + 백테스트) 담당.
 
