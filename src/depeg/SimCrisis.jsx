@@ -202,6 +202,9 @@ export default function SimCrisis({ L, lang, labelOf, fmtTime }) {
             <a className="dp-small" href="/depeg/sim-template.csv" download style={{ color: "var(--accent)" }}>
               {L("템플릿 내려받기", "Download template")}
             </a>
+            <a className="dp-small" href="/depeg/sim-rehearsal.csv" download style={{ color: "var(--accent)" }}>
+              {L("리허설용 24시간 파일", "24-hour rehearsal file")}
+            </a>
           </div>
           <p className="dp-small" style={{ margin: "10px 0 0" }}>
             {L("열: t(UTC), price_usd(필수) · redemption_volume_usd, pool_imbalance_ratio(0~1), news_risk_flag(0/1), reserve_cash_ratio, attestation_age_days(선택). 비운 열은 점수에 넣지 않습니다.",

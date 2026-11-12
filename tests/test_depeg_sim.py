@@ -122,3 +122,22 @@ def test_signature_matches_threatwatch_rule(monkeypatch):
     import hashlib, hmac
     expected = hmac.new(b"test-secret", f"1700000000.{'ab' * 16}".encode(), hashlib.sha256).hexdigest()
     assert h["x-tw-signature"] == expected and h["x-tw-timestamp"] == "1700000000"
+
+
+def test_rehearsal_file_crosses_lines_at_known_hours():
+    """리허설용 24시간 파일 (public/depeg/sim-rehearsal.csv) — 시각마다 무엇이 일어나는지 고정한다.
+    06Z 뉴스 신호 → 12Z 경보 기준 70 → 13Z 사람 승인 기준 85(여기서 1건 발송) → 14Z 최저점 → 회복."""
+    with open(os.path.join(ROOT, "public", "depeg", "sim-rehearsal.csv"), encoding="utf-8") as f:
+        rows, cols = validate_rows(list(csv.DictReader(f)))
+    scores = score_rows(rows)
+    assert len(rows) == 24 and "news_risk_flag" in cols
+    assert max(s["score"] for s in scores[:6]) < 10  # 평상시
+    assert scores[6]["score"] - scores[5]["score"] >= 10 and scores[6]["bps"] > -5  # 뉴스가 가격보다 먼저
+    first70 = next(i for i, s in enumerate(scores) if s["score"] >= 70)
+    assert first70 == 12
+    assert first_send_index(scores) == 13 and scores[13]["t"] == "2026-11-25T13:00:00Z"
+    assert min(range(24), key=lambda i: scores[i]["bps"]) == 14
+    assert scores[-1]["score"] < 10  # 회복
+    built = build_alert(rows, 13, "sim-rehearsal.csv")
+    assert built["alert"]["severity"] == "high"
+    assert built["alert"]["description"].startswith("[DEMO SIMULATION · sim-rehearsal.csv · 2026-11-25T13:00:00Z]")
