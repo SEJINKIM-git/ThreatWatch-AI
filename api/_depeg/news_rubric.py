@@ -1,4 +1,4 @@
-# AUTO-COPIED from depeg-early-warning/src/intelligence/news_rubric.py @2607352
+# AUTO-COPIED from depeg-early-warning/src/intelligence/news_rubric.py @8ef6cac
 # 직접 고치지 말 것 — 엔진 저장소에서 고친 뒤 scripts/sync_depeg_engine.sh 로 다시 복사
 """뉴스 기준표 v2 — 기사 제목을 정해진 규칙으로만 분류한다 (AI 판단 없음).
 
@@ -8,7 +8,10 @@ AI는 이 분류를 바꾸지 않고, 나중에 사람이 읽을 설명 문장�
 v2 = v1의 시점별 보관처 목록(REPORTS, counterparties_at)
    + 대시보드 v0.2의 오탐 방지 규칙
    + docs/news_leadtime_2023.md 4장의 놓친 표현·해소 표현.
-바꾼 항목은 코드보다 먼저 docs/news_rubric_v2_changes.md 에 사전 등록했다(a1~a6, b1~b8).
+v2.1 = v2 + 실시간 오탐 1건(BNY Mellon 동명 펀드의 공매도 잔고 기사)에서 나온 두 가지:
+   c1 주가 급락(b5)은 shares/stock 이 앞에 있고 short interest 가 없을 때만,
+   c2 보관처 별칭이 동명 펀드·ETF나 다른 티커를 가리키면 보관처로 보지 않음.
+바꾼 항목은 코드보다 먼저 docs/news_rubric_v2_changes.md 에 사전 등록했다(a1~a6, b1~b8, c1~c2).
 그 목록 밖의 패턴은 넣지 않는다 — 같은 데이터로 계속 고치면 리드타임이 부풀려진다.
 
 등급
@@ -26,7 +29,7 @@ import re
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
-RUBRIC_VERSION = "v2"
+RUBRIC_VERSION = "v2.1"
 
 CI = re.IGNORECASE
 
@@ -54,7 +57,7 @@ ISSUER_DISTRESS = _rx([
     r"\b(USDC|stablecoin) (collapse|crash)\b",
 ])
 
-# a5 + b1 + b2 + b5 + b6  보관처(은행·펀드)의 위기
+# a5 + b1 + b2 + b6  보관처(은행·펀드)의 위기 (b5 주가 급락은 v2.1부터 아래 SHARE_PLUNGE 로 따로 본다)
 BANK_DISTRESS = _rx([
     r"\bbank run\b", r"\breceivership\b", r"\bFDIC (takes|took|seiz\w*|takeover|steps in)\b",
     r"\binsolven(t|cy)\b", r"\bcollapse[sd]?\b", r"\bbank failure\b", r"\bfail(s|ed)\b",
@@ -63,9 +66,15 @@ BANK_DISTRESS = _rx([
     r"\bwind(s|ing)? down\b", r"\bliquidat\w*",                                     # b1
     r"\bshutter\w*", r"\bclosed by (\w+ ){0,2}regulators?\b",                         # b2
     r"\b(takes?|took|taking) possession\b",                                          # b2
-    r"\b(plung|fall|fell|drop)\w* (more than |over |about |nearly )?\d+(\.\d+)?%",   # b5
     r"\b(move|pull|withdraw)\w* (\w+ ){0,2}(money|funds|deposits|cash) (out of|from)\b",  # b6
 ])
+
+# c1 (b5 개정)  주가 급락: shares/stock 이 급락 표현보다 앞에 있을 때만 (사이 40자 이내)
+SHARE_PLUNGE = _rx([
+    r"\b(shares?|stock)\b[^.;:]{0,40}?\b(plung|fall|fell|drop)\w* (more than |over |about |nearly )?\d+(\.\d+)?%",
+])
+# c1  공매도 잔고 기사에는 급락 규칙을 적용하지 않는다 (잔고 감소는 위기가 아님)
+SHORT_INTEREST = _rx([r"\bshort (interest|positions?)\b"])
 
 # b7  발행사 + 보관처가 함께 나올 때, 준비금이 그곳에 있다는 표현
 EXPOSURE = _rx([
@@ -105,6 +114,15 @@ COUNTERPARTY_ALIASES: dict[str, list[str]] = {
     "Silvergate Bank": [r"\bSilvergate\b"],
     "Circle Reserve Fund": [r"\bCircle Reserve Fund\b", r"\bUSDXX\b"],
     "BlackRock": [],  # 흔한 BlackRock 뉴스가 B로 켜지지 않게. 펀드는 Circle Reserve Fund·USDXX로 잡는다
+}
+
+# c2  별칭이 맞아도 이 표현이 있으면 그 기관으로 보지 않는다 (같은 이름의 펀드·ETF, 다른 회사 티커)
+#     BNY 자신의 티커(BK)는 제외하지 않는다 — "BNY Mellon (NYSE:BK) shares plunge"는 진짜 위기 기사다.
+COUNTERPARTY_EXCLUDE: dict[str, list[str]] = {
+    "Bank of New York Mellon": [
+        r"\bBNY( Mellon)?\b[^.;:]{0,60}?\b(Funds?|ETFs?)\b",
+        r"\((NYSE|NASDAQ|NYSEAMERICAN|NYSE American|AMEX)\s*:\s*(?!BK\))[A-Z.]{1,6}\)",
+    ],
 }
 
 _FUND = "Circle Reserve Fund"
@@ -193,6 +211,24 @@ def counterparty_patterns(counterparties: Iterable[str]) -> list[re.Pattern]:
     return patterns
 
 
+def _party(title: str, counterparties: Iterable[str]) -> str | None:
+    """제목에 나온 보관처 이름(처음 맞은 것). c2 제외 표현이 있는 기관은 건너뛴다."""
+    for name in counterparties:
+        hit = _first(counterparty_patterns([name]), title)
+        if hit and not _first(_rx(COUNTERPARTY_EXCLUDE.get(name, [])), title):
+            return hit
+    return None
+
+
+def _bank_distress(title: str) -> str | None:
+    d = _first(BANK_DISTRESS, title)
+    if d:
+        return d
+    if not _first(SHORT_INTEREST, title):  # c1
+        return _first(SHARE_PLUNGE, title)
+    return None
+
+
 def _graded(tier: str, who: str, why: str, softened: str | None) -> dict[str, Any]:
     if softened:
         return {"tier": "C", "who": who, "why": f"{why} / {softened}"}
@@ -207,7 +243,7 @@ def classify(title: str, counterparties: Iterable[str]) -> dict[str, Any] | None
     부정·소문·회고·해소 표현이 같이 있으면 A·B는 C로 내린다.
     """
     issuer = _issuer(title)
-    party = _first(counterparty_patterns(counterparties), title)
+    party = _party(title, counterparties)
     softened = _first(DOWNGRADE, title)
 
     if issuer:
@@ -215,7 +251,7 @@ def classify(title: str, counterparties: Iterable[str]) -> dict[str, Any] | None
         if d:
             return _graded("A", issuer, d, softened)
     if party:
-        d = _first(BANK_DISTRESS, title)
+        d = _bank_distress(title)
         if d:
             return _graded("B", party, d, softened)
         if issuer:
