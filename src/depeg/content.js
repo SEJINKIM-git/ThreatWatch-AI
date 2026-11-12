@@ -6,7 +6,7 @@
  * 진행 상태(status)는 사람이 갱신하는 값이므로 바뀌면 여기만 고치면 된다.
  */
 
-export const STATUS_AS_OF = "2026-11-11";
+export const STATUS_AS_OF = "2026-11-12";
 
 // done: 완료 · live: 운영 중(기존) · built: 구현됨(main 반영 전)
 // wip: 진행 중 · draft: 초안/임시 · todo: 시작 전 · decide: 회의 결정 대기
@@ -52,14 +52,14 @@ export const STEPS = [
   {
     key: "filing", lane: "engine", num: "①", status: "wip",
     owner: { ko: "세진 (주완 인계)", en: "Sejin (from Juwan)" },
-    title: { ko: "공시 데이터 수집", en: "Reserve filings" },
-    short: { ko: "Circle의 월간 준비금 보고서에서 숫자를 뽑음", en: "Extracts numbers from Circle's monthly reserve report" },
+    title: { ko: "공시·뉴스 데이터 수집", en: "Reserve filings & news" },
+    short: { ko: "Circle 준비금 보고서의 숫자와, 위기 기사 신호를 만듦", en: "Reserve-report numbers plus a crisis-news signal" },
     what: {
-      ko: "USDC 발행사 Circle이 매달 내는 '준비금 증명 보고서'에서 현금·국채 비중, 보고서가 얼마나 오래됐는지를 뽑습니다. 보고서는 발행일 이후에만 쓰도록 해서, 그 시점에 몰랐던 정보가 섞이지 않게 합니다.",
-      en: "Reads Circle's monthly reserve attestation: cash and T-bill shares, and how old the latest report is. A report is only used after its publish date, so no future information leaks in.",
+      ko: "USDC 발행사 Circle이 매달 내는 '준비금 증명 보고서'에서 현금·국채 비중, 보고서가 얼마나 오래됐는지를 뽑습니다. 뉴스는 기사 제목을 정해진 규칙(뉴스 기준표 v2)으로만 분류해, 그 시점 보고서에 나온 보관 은행·Circle 자체의 위기 기사가 있으면 신호를 켭니다. 2023년 3월 시간별 뉴스 신호는 완료, 평상시 기사 표본은 원준이 정리 중입니다. 보고서와 기사는 공개된 시각 이후에만 써서 그 시점에 몰랐던 정보가 섞이지 않게 합니다.",
+      en: "Reads Circle's monthly reserve attestation: cash and T-bill shares, and report age. News headlines are classified by fixed rules only (news rubric v2): a crisis at Circle itself or at a bank named in the report public at that hour turns the signal on. The hourly March 2023 news signal is done; a calm-period sample is in progress (Wonjun). Reports and articles are used only after they were public, so no future information leaks in.",
     },
-    input: { ko: "Circle 준비금 보고서 PDF", en: "Circle attestation PDFs" },
-    output: { ko: "현금 비중, 국채 비중, 보고서 경과 일수", en: "Cash share, T-bill share, report age" },
+    input: { ko: "Circle 준비금 보고서 PDF, 기사 제목", en: "Circle attestation PDFs, headlines" },
+    output: { ko: "현금 비중, 국채 비중, 보고서 경과 일수, 뉴스 신호(0/1)", en: "Cash share, T-bill share, report age, news flag (0/1)" },
     code: "src/intelligence/attestation_parser.py",
   },
   {
@@ -71,7 +71,7 @@ export const STEPS = [
       ko: "들어온 데이터마다 '얼마나 위험한가'를 0~1로 바꾼 뒤 가중치를 곱해 더합니다. 지금은 임시 공식이라, 과거 데이터로 검증하며 가중치를 고치는 작업(백테스트)이 남아 있습니다.",
       en: "Converts each signal to a 0–1 risk, weights and sums them. The formula is a placeholder; calibrating it on historical data (backtest) is still to do.",
     },
-    input: { ko: "①의 가격·공시 데이터", en: "Signals from ①" },
+    input: { ko: "①의 가격·공시·뉴스 데이터", en: "Signals from ①" },
     output: { ko: "위험 점수, 점수에 가장 크게 기여한 항목", en: "Score and the top contributing factors" },
     code: "src/engine/risk_score.py",
   },
@@ -202,16 +202,16 @@ export const GAPS = [
   {
     ko: "실제 데이터로는 경보가 울리지 않습니다",
     en: "Real data never crosses the alert line",
-    dKo: "가격 항목의 가중치가 0.5라 가격만으로는 최대 50점입니다. 공시를 더해도 54.5점으로 기준 70점에 못 미칩니다. 계산 방식을 바꿀지, 데이터를 더 받을지 정해야 합니다.",
-    dEn: "Price carries a 0.5 weight, so price alone caps at 50. With filings it reaches 54.5 — still under 70. Either the formula or the inputs must change.",
+    dKo: "가격 항목의 가중치가 0.5라 가격만으로는 최대 50점입니다. 공시·뉴스를 더해도 기준 70점에 못 미칩니다(최고 점수는 위 리플레이). 계산 방식을 바꿀지, 데이터를 더 받을지 정해야 합니다.",
+    dEn: "Price carries a 0.5 weight, so price alone caps at 50. Adding filings and news still stays under 70 (peak shown in the replay above). Either the formula or the inputs must change.",
     owner: { ko: "재석", en: "Jaeseok" },
   },
   {
-    ko: "공시 데이터는 경보를 앞당기지 못합니다",
-    en: "Filings cannot move the alert earlier",
-    dKo: "폭락 주간에 공개돼 있던 공시는 1월 보고서 하나뿐이라 그 주 내내 값이 고정입니다. 시간을 앞당기려면 가격보다 먼저 움직이는 데이터(뉴스, 대량 상환)가 필요합니다.",
-    dEn: "Only the January report was public that week, so the value is flat. Earlier warning needs signals that move before price (news, redemptions).",
-    owner: { ko: "원준 · 세진", en: "Wonjun · Sejin" },
+    ko: "뉴스가 리드타임을 늘렸지만 기준선은 넘지 못합니다",
+    en: "News lengthens the lead time but does not cross the line",
+    dKo: "뉴스 신호는 가격보다 훨씬 먼저 켜지지만, 점수 공식(뉴스 가중치 0.1)이 그대로라 기준선을 넘지 못합니다. 재석의 비중 재설계를 기다리는 중입니다. 평상시 뉴스 오탐 확인도 아직 남아 있습니다.",
+    dEn: "The news signal turns on long before price moves, but the formula (news weight 0.1) is unchanged, so the line is not reached. Waiting on Jaeseok's reweighting; the calm-period news false-alarm check is also still pending.",
+    owner: { ko: "재석 · 원준", en: "Jaeseok · Wonjun" },
   },
   {
     ko: "엔진이 아직 실제로 경보를 보내지 않습니다",

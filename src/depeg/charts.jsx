@@ -11,6 +11,10 @@ export const SERIES = {
   price: "#3987e5",
   scorePrice: "#3987e5",
   scoreFull: "#199e70",
+  // 세 번째 줄(가격+공시+뉴스). dataviz 검증기로 #0e1523 위에서 위 두 색과 전체 쌍 통과
+  // (CVD ΔE 9.4, 정상 시각 20.9). 경보·승인 기준선(상태색)과는 점선·글자 라벨로 구분한다.
+  scoreNews: "#d95926",
+  newsBand: "rgba(217, 89, 38, 0.10)",
 };
 
 export const INK = {
@@ -41,17 +45,19 @@ export function useWidth(initial = 640) {
  * series: [{ key, label, color, values }]
  * refLines: [{ y, label, color }]
  * hoverIdx / onHover: 위아래 차트가 같은 시각을 가리키도록 부모가 상태를 가진다.
+ * bands: [{ from, to, color, label }] — 인덱스 구간을 옅은 배경 띠로 (upto 이후는 그리지 않음)
+ * endLabels: true면 오른쪽 끝에 계열 이름을 직접 단다 (s.short || s.label, 겹치지 않게 밀어냄)
  */
 export function LineChart({
   series, times, yMin, yMax, yTicks, formatY, refLines = [], markers = [],
-  height = 220, hoverIdx, onHover, ariaLabel, compact = false, upto,
+  height = 220, hoverIdx, onHover, ariaLabel, compact = false, upto, bands = [], endLabels = false,
 }) {
   // upto: 재생 중일 때 여기까지만 선을 그린다 (x축 눈금은 전체 기간 그대로 — 화면이 늘어나지 않게)
   const shown = (vals) => (upto == null ? vals : vals.slice(0, upto + 1));
   const [ref, width] = useWidth();
   const pad = compact
     ? { l: 50, r: 12, t: 10, b: 20 }
-    : { l: 52, r: 16, t: 14, b: 28 };
+    : { l: 52, r: endLabels ? 74 : 16, t: 14, b: 28 };
   const iw = width - pad.l - pad.r;
   const ih = height - pad.t - pad.b;
   const n = times.length;
@@ -79,10 +85,40 @@ export function LineChart({
 
   const hx = hoverIdx != null ? x(hoverIdx) : null;
 
+  // 오른쪽 끝 직접 라벨: 마지막으로 그려진 값 위치에 두되 13px보다 가까우면 아래로 밀어낸다
+  const last = upto == null ? n - 1 : Math.min(upto, n - 1);
+  const labels = endLabels
+    ? series.map((s) => ({ key: s.key, text: s.short || s.label, color: s.color, y: y(s.values[last]) }))
+      .sort((a, b) => a.y - b.y)
+      .reduce((acc, l) => {
+        const prev = acc[acc.length - 1];
+        acc.push({ ...l, ly: prev ? Math.max(l.y, prev.ly + 13) : l.y });
+        return acc;
+      }, [])
+    : [];
+  const overflow = labels.length ? Math.max(0, labels[labels.length - 1].ly - (pad.t + ih)) : 0;
+
   return (
     <div ref={ref} style={{ width: "100%" }}>
       <svg width={width} height={height} role="img" aria-label={ariaLabel}
            style={{ display: "block", touchAction: "pan-y" }}>
+        {/* 배경 띠 (예: 뉴스 신호가 켜진 시간대) */}
+        {bands.filter((b) => upto == null || b.from <= upto).map((b, k) => {
+          const to = upto == null ? b.to : Math.min(b.to, upto);
+          const x0 = x(b.from) - (n > 1 ? iw / (n - 1) / 2 : 0);
+          const x1 = x(to) + (n > 1 ? iw / (n - 1) / 2 : 0);
+          const cx0 = Math.max(pad.l, x0);
+          return (
+            <g key={`band-${b.from}`}>
+              <rect x={cx0} y={pad.t} width={Math.max(0, Math.min(width - pad.r, x1) - cx0)} height={ih}
+                    fill={b.color} />
+              {k === 0 && b.label && (
+                <text x={cx0 + 6} y={pad.t + 12} className="dp-axis">{b.label}</text>
+              )}
+            </g>
+          );
+        })}
+
         {/* 격자 + y축 눈금 */}
         {yTicks.map((v) => (
           <g key={v}>
@@ -116,6 +152,17 @@ export function LineChart({
         {series.map((s) => (
           <path key={s.key} d={path(shown(s.values))} fill="none" stroke={s.color}
                 strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        ))}
+
+        {/* 오른쪽 끝 직접 라벨 — 글자는 글자색, 계열 색은 옆의 짧은 선이 맡는다 */}
+        {labels.map((l) => (
+          <g key={`lbl-${l.key}`}>
+            <line x1={x(last) + 4} x2={x(last) + 14} y1={l.ly - overflow} y2={l.ly - overflow}
+                  stroke={l.color} strokeWidth="2" strokeLinecap="round" />
+            <text x={x(last) + 18} y={l.ly - overflow + 4} className="dp-axis" style={{ fill: INK.dim }}>
+              {l.text}
+            </text>
+          </g>
         ))}
 
         {/* 데이터에서 나온 표시점 */}

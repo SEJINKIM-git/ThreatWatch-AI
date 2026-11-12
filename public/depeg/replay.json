@@ -1,6 +1,7 @@
 {
- "generated_at": "2026-11-11T05:55:44Z",
- "engine_commit": "9d8cc01",
+ "generated_at": "2026-11-12T11:54:08Z",
+ "engine_commit": "2607352",
+ "news_rubric_version": "v2",
  "thresholds": {
   "alert": 70.0,
   "approval": 85.0
@@ -38,7 +39,19 @@
    "bps": -1.2,
    "score_price": 0.12,
    "score_full": 4.44,
+   "score_news": 14.44,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto Bank Silvergate Announces 'Voluntary Liquidation'",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-08T21:41:13Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -52,7 +65,7 @@
      "contribution": 0.0012
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -61,7 +74,19 @@
    "bps": -1.2,
    "score_price": 0.12,
    "score_full": 4.44,
+   "score_news": 14.44,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto Bank Silvergate Announces 'Voluntary Liquidation'",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-08T21:41:13Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -75,7 +100,7 @@
      "contribution": 0.0012
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -84,7 +109,19 @@
    "bps": -1.1,
    "score_price": 0.11,
    "score_full": 4.43,
+   "score_news": 14.43,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto Bank Silvergate Announces 'Voluntary Liquidation'",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-08T21:41:13Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -98,7 +135,7 @@
      "contribution": 0.0011
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -107,7 +144,19 @@
    "bps": -1.3,
    "score_price": 0.13,
    "score_full": 4.46,
+   "score_news": 14.46,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto Stakeholders Say No Exposure to Shuttered Silvergate",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-09T03:49:15Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -121,7 +170,7 @@
      "contribution": 0.0013
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -130,7 +179,19 @@
    "bps": -1.3,
    "score_price": 0.13,
    "score_full": 4.46,
+   "score_news": 14.46,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto Stakeholders Say No Exposure to Shuttered Silvergate",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-09T03:49:15Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -144,7 +205,7 @@
      "contribution": 0.0013
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -153,7 +214,19 @@
    "bps": -1.3,
    "score_price": 0.13,
    "score_full": 4.46,
+   "score_news": 14.46,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto Stakeholders Say No Exposure to Shuttered Silvergate",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-09T03:49:15Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -167,7 +240,7 @@
      "contribution": 0.0013
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -176,7 +249,19 @@
    "bps": -1.3,
    "score_price": 0.13,
    "score_full": 4.46,
+   "score_news": 14.46,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto Stakeholders Say No Exposure to Shuttered Silvergate",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-09T03:49:15Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -190,7 +275,7 @@
      "contribution": 0.0013
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -199,7 +284,19 @@
    "bps": -1.3,
    "score_price": 0.13,
    "score_full": 4.46,
+   "score_news": 14.46,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto Stakeholders Say No Exposure to Shuttered Silvergate",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-09T03:49:15Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -213,7 +310,7 @@
      "contribution": 0.0013
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -222,7 +319,19 @@
    "bps": -1.2,
    "score_price": 0.12,
    "score_full": 4.46,
+   "score_news": 14.46,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto Stakeholders Say No Exposure to Shuttered Silvergate",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-09T03:49:15Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -236,7 +345,7 @@
      "contribution": 0.0012
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -245,7 +354,19 @@
    "bps": -1.3,
    "score_price": 0.13,
    "score_full": 4.47,
+   "score_news": 14.47,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto Stakeholders Say No Exposure to Shuttered Silvergate",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-09T03:49:15Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -259,7 +380,7 @@
      "contribution": 0.0013
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -268,7 +389,19 @@
    "bps": -1.2,
    "score_price": 0.12,
    "score_full": 4.46,
+   "score_news": 14.46,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto Stakeholders Say No Exposure to Shuttered Silvergate",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-09T03:49:15Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -282,7 +415,7 @@
      "contribution": 0.0012
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -291,7 +424,19 @@
    "bps": -1.7,
    "score_price": 0.17,
    "score_full": 4.51,
+   "score_news": 14.51,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto Stakeholders Say No Exposure to Shuttered Silvergate",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-09T03:49:15Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -305,7 +450,7 @@
      "contribution": 0.0017
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -314,7 +459,19 @@
    "bps": -1.8,
    "score_price": 0.18,
    "score_full": 4.53,
+   "score_news": 14.53,
+   "news": 1,
+   "news_top": {
+    "title": "Bitcoin, ether fall after go-to crypto bank Silvergate announces liquidation",
+    "outlet": "CNBC",
+    "tier": "B",
+    "published_at": "2023-03-09T12:35:11Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -328,7 +485,7 @@
      "contribution": 0.0018
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -337,7 +494,19 @@
    "bps": -0.8,
    "score_price": 0.08,
    "score_full": 4.43,
+   "score_news": 14.43,
+   "news": 1,
+   "news_top": {
+    "title": "Bitcoin, ether fall after go-to crypto bank Silvergate announces liquidation",
+    "outlet": "CNBC",
+    "tier": "B",
+    "published_at": "2023-03-09T12:35:11Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -351,7 +520,7 @@
      "contribution": 0.0008
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -360,7 +529,19 @@
    "bps": -0.6,
    "score_price": 0.06,
    "score_full": 4.41,
+   "score_news": 14.41,
+   "news": 1,
+   "news_top": {
+    "title": "Bitcoin, ether fall after go-to crypto bank Silvergate announces liquidation",
+    "outlet": "CNBC",
+    "tier": "B",
+    "published_at": "2023-03-09T12:35:11Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -374,7 +555,7 @@
      "contribution": 0.0006
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -383,7 +564,19 @@
    "bps": -0.6,
    "score_price": 0.06,
    "score_full": 4.41,
+   "score_news": 14.41,
+   "news": 1,
+   "news_top": {
+    "title": "Bitcoin, ether fall after go-to crypto bank Silvergate announces liquidation",
+    "outlet": "CNBC",
+    "tier": "B",
+    "published_at": "2023-03-09T12:35:11Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -397,7 +590,7 @@
      "contribution": 0.0006
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -406,7 +599,19 @@
    "bps": -0.7,
    "score_price": 0.07,
    "score_full": 4.43,
+   "score_news": 14.43,
+   "news": 1,
+   "news_top": {
+    "title": "Bitcoin, ether fall after go-to crypto bank Silvergate announces liquidation",
+    "outlet": "CNBC",
+    "tier": "B",
+    "published_at": "2023-03-09T12:35:11Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -420,7 +625,7 @@
      "contribution": 0.0007
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -429,7 +634,19 @@
    "bps": -0.6,
    "score_price": 0.06,
    "score_full": 4.42,
+   "score_news": 14.42,
+   "news": 1,
+   "news_top": {
+    "title": "Bitcoin, ether fall after go-to crypto bank Silvergate announces liquidation",
+    "outlet": "CNBC",
+    "tier": "B",
+    "published_at": "2023-03-09T12:35:11Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -443,7 +660,7 @@
      "contribution": 0.0006
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -452,7 +669,19 @@
    "bps": -1.7,
    "score_price": 0.17,
    "score_full": 4.53,
+   "score_news": 14.53,
+   "news": 1,
+   "news_top": {
+    "title": "Bitcoin, ether fall after go-to crypto bank Silvergate announces liquidation",
+    "outlet": "CNBC",
+    "tier": "B",
+    "published_at": "2023-03-09T12:35:11Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -466,7 +695,7 @@
      "contribution": 0.0017
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -475,7 +704,19 @@
    "bps": -0.6,
    "score_price": 0.06,
    "score_full": 4.42,
+   "score_news": 14.42,
+   "news": 1,
+   "news_top": {
+    "title": "Shares of SVB Financial fall 60% as tech-focused bank looks to raise more cash",
+    "outlet": "CNBC",
+    "tier": "B",
+    "published_at": "2023-03-09T19:33:04Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -489,7 +730,7 @@
      "contribution": 0.0006
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -498,7 +739,19 @@
    "bps": -0.6,
    "score_price": 0.06,
    "score_full": 4.43,
+   "score_news": 14.43,
+   "news": 1,
+   "news_top": {
+    "title": "Thiel Fund, Venture Firms Advise Companies to Pull Money From SVB",
+    "outlet": "Bloomberg",
+    "tier": "B",
+    "published_at": "2023-03-09T20:53:52Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -512,7 +765,7 @@
      "contribution": 0.0006
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -521,7 +774,19 @@
    "bps": -0.6,
    "score_price": 0.06,
    "score_full": 4.43,
+   "score_news": 14.43,
+   "news": 1,
+   "news_top": {
+    "title": "Thiel Fund, Venture Firms Advise Companies to Pull Money From SVB",
+    "outlet": "Bloomberg",
+    "tier": "B",
+    "published_at": "2023-03-09T20:53:52Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -535,7 +800,7 @@
      "contribution": 0.0006
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -544,7 +809,19 @@
    "bps": -0.8,
    "score_price": 0.08,
    "score_full": 4.45,
+   "score_news": 14.45,
+   "news": 1,
+   "news_top": {
+    "title": "Peter Thiel’s Founders Fund Advises Companies to Withdraw Money From SVB",
+    "outlet": "Bloomberg",
+    "tier": "B",
+    "published_at": "2023-03-09T22:11:27Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -558,7 +835,7 @@
      "contribution": 0.0008
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -567,7 +844,19 @@
    "bps": -0.7,
    "score_price": 0.07,
    "score_full": 4.44,
+   "score_news": 14.44,
+   "news": 1,
+   "news_top": {
+    "title": "Peter Thiel’s Founders Fund Advises Companies to Withdraw Money From SVB",
+    "outlet": "Bloomberg",
+    "tier": "B",
+    "published_at": "2023-03-09T22:11:27Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -581,7 +870,7 @@
      "contribution": 0.0007
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -590,7 +879,19 @@
    "bps": -0.6,
    "score_price": 0.06,
    "score_full": 4.43,
+   "score_news": 14.43,
+   "news": 1,
+   "news_top": {
+    "title": "Peter Thiel’s Founders Fund Advises Companies to Withdraw Money From SVB",
+    "outlet": "Bloomberg",
+    "tier": "B",
+    "published_at": "2023-03-09T22:11:27Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -604,7 +905,7 @@
      "contribution": 0.0006
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -613,7 +914,19 @@
    "bps": -0.7,
    "score_price": 0.07,
    "score_full": 4.45,
+   "score_news": 14.45,
+   "news": 1,
+   "news_top": {
+    "title": "Peter Thiel’s Founders Fund Advises Companies to Withdraw Money From SVB",
+    "outlet": "Bloomberg",
+    "tier": "B",
+    "published_at": "2023-03-09T22:11:27Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -627,7 +940,7 @@
      "contribution": 0.0007
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -636,7 +949,19 @@
    "bps": -0.7,
    "score_price": 0.07,
    "score_full": 4.45,
+   "score_news": 14.45,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto VCs urge portfolio companies to pull funds from Silicon Valley Bank",
+    "outlet": "The Block",
+    "tier": "B",
+    "published_at": "2023-03-10T02:56:29Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -650,7 +975,7 @@
      "contribution": 0.0007
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -659,7 +984,19 @@
    "bps": -0.8,
    "score_price": 0.08,
    "score_full": 4.46,
+   "score_news": 14.46,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto VCs urge portfolio companies to pull funds from Silicon Valley Bank",
+    "outlet": "The Block",
+    "tier": "B",
+    "published_at": "2023-03-10T02:56:29Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -673,7 +1010,7 @@
      "contribution": 0.0008
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -682,7 +1019,19 @@
    "bps": -0.4,
    "score_price": 0.04,
    "score_full": 4.42,
+   "score_news": 14.42,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto VCs urge portfolio companies to pull funds from Silicon Valley Bank",
+    "outlet": "The Block",
+    "tier": "B",
+    "published_at": "2023-03-10T02:56:29Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -696,7 +1045,7 @@
      "contribution": 0.0004
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -705,7 +1054,19 @@
    "bps": 0.0,
    "score_price": 0.0,
    "score_full": 4.39,
+   "score_news": 14.39,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto VCs urge portfolio companies to pull funds from Silicon Valley Bank",
+    "outlet": "The Block",
+    "tier": "B",
+    "published_at": "2023-03-10T02:56:29Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -715,7 +1076,7 @@
      "contribution": 0.004
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -724,7 +1085,19 @@
    "bps": 0.0,
    "score_price": 0.0,
    "score_full": 4.39,
+   "score_news": 14.39,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto VCs urge portfolio companies to pull funds from Silicon Valley Bank",
+    "outlet": "The Block",
+    "tier": "B",
+    "published_at": "2023-03-10T02:56:29Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -734,7 +1107,7 @@
      "contribution": 0.0041
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -743,7 +1116,19 @@
    "bps": -0.5,
    "score_price": 0.05,
    "score_full": 4.44,
+   "score_news": 14.44,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto VCs urge portfolio companies to pull funds from Silicon Valley Bank",
+    "outlet": "The Block",
+    "tier": "B",
+    "published_at": "2023-03-10T02:56:29Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -757,7 +1142,7 @@
      "contribution": 0.0005
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -766,7 +1151,19 @@
    "bps": -7.0,
    "score_price": 0.7,
    "score_full": 5.09,
+   "score_news": 15.09,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto VCs urge portfolio companies to pull funds from Silicon Valley Bank",
+    "outlet": "The Block",
+    "tier": "B",
+    "published_at": "2023-03-10T02:56:29Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -780,7 +1177,7 @@
      "contribution": 0.0041
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -789,7 +1186,19 @@
    "bps": -0.3,
    "score_price": 0.03,
    "score_full": 4.43,
+   "score_news": 14.43,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto VCs urge portfolio companies to pull funds from Silicon Valley Bank",
+    "outlet": "The Block",
+    "tier": "B",
+    "published_at": "2023-03-10T02:56:29Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -803,7 +1212,7 @@
      "contribution": 0.0003
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -812,7 +1221,19 @@
    "bps": 0.0,
    "score_price": 0.0,
    "score_full": 4.4,
+   "score_news": 14.4,
+   "news": 1,
+   "news_top": {
+    "title": "Startup world spooked as Silicon Valley Bank races to prevent bank run",
+    "outlet": "The Irish Times (Financial Times syndication)",
+    "tier": "B",
+    "published_at": "2023-03-10T10:29:41Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -822,7 +1243,7 @@
      "contribution": 0.0041
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -831,7 +1252,19 @@
    "bps": -0.1,
    "score_price": 0.01,
    "score_full": 4.41,
+   "score_news": 14.41,
+   "news": 1,
+   "news_top": {
+    "title": "Startup world spooked as Silicon Valley Bank races to prevent bank run",
+    "outlet": "The Irish Times (Financial Times syndication)",
+    "tier": "B",
+    "published_at": "2023-03-10T10:29:41Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -845,7 +1278,7 @@
      "contribution": 0.0001
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -854,7 +1287,19 @@
    "bps": -0.1,
    "score_price": 0.01,
    "score_full": 4.41,
+   "score_news": 14.41,
+   "news": 1,
+   "news_top": {
+    "title": "Startup world spooked as Silicon Valley Bank races to prevent bank run",
+    "outlet": "The Irish Times (Financial Times syndication)",
+    "tier": "B",
+    "published_at": "2023-03-10T10:29:41Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -868,7 +1313,7 @@
      "contribution": 0.0001
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -877,7 +1322,19 @@
    "bps": -0.2,
    "score_price": 0.02,
    "score_full": 4.42,
+   "score_news": 14.42,
+   "news": 1,
+   "news_top": {
+    "title": "Startup world spooked as Silicon Valley Bank races to prevent bank run",
+    "outlet": "The Irish Times (Financial Times syndication)",
+    "tier": "B",
+    "published_at": "2023-03-10T10:29:41Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -891,7 +1348,7 @@
      "contribution": 0.0002
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -900,7 +1357,19 @@
    "bps": -0.3,
    "score_price": 0.03,
    "score_full": 4.44,
+   "score_news": 14.44,
+   "news": 1,
+   "news_top": {
+    "title": "Silicon Valley Bank plunges 60% before halt, Signature trading stopped shortly after open",
+    "outlet": "The Block",
+    "tier": "B",
+    "published_at": "2023-03-10T14:56:03Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -914,7 +1383,7 @@
      "contribution": 0.0003
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -923,7 +1392,19 @@
    "bps": -0.3,
    "score_price": 0.03,
    "score_full": 4.44,
+   "score_news": 14.44,
+   "news": 1,
+   "news_top": {
+    "title": "Silicon Valley Bank plunges 60% before halt, Signature trading stopped shortly after open",
+    "outlet": "The Block",
+    "tier": "B",
+    "published_at": "2023-03-10T14:56:03Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -937,7 +1418,7 @@
      "contribution": 0.0003
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -946,7 +1427,19 @@
    "bps": 0.2,
    "score_price": 0.02,
    "score_full": 4.43,
+   "score_news": 14.43,
+   "news": 1,
+   "news_top": {
+    "title": "Silicon Valley Bank closed by California regulator",
+    "outlet": "The Block",
+    "tier": "B",
+    "published_at": "2023-03-10T16:56:10Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -960,7 +1453,7 @@
      "contribution": 0.0002
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -969,7 +1462,19 @@
    "bps": 0.2,
    "score_price": 0.02,
    "score_full": 4.43,
+   "score_news": 14.43,
+   "news": 1,
+   "news_top": {
+    "title": "Silicon Valley Bank shut down by California regulator",
+    "outlet": "Cointelegraph",
+    "tier": "B",
+    "published_at": "2023-03-10T17:04:52Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -983,7 +1488,7 @@
      "contribution": 0.0002
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -992,7 +1497,19 @@
    "bps": -0.3,
    "score_price": 0.03,
    "score_full": 4.45,
+   "score_news": 14.45,
+   "news": 1,
+   "news_top": {
+    "title": "Silicon Valley Bank shut down by California regulator",
+    "outlet": "Cointelegraph",
+    "tier": "B",
+    "published_at": "2023-03-10T17:04:52Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -1006,7 +1523,7 @@
      "contribution": 0.0003
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1015,7 +1532,19 @@
    "bps": -0.3,
    "score_price": 0.03,
    "score_full": 4.45,
+   "score_news": 14.45,
+   "news": 1,
+   "news_top": {
+    "title": "Scrutiny Falls on $43B USDC Stablecoin’s Cash Reserves at Failed Silicon Valley Bank",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-10T19:35:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -1029,7 +1558,7 @@
      "contribution": 0.0003
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1038,7 +1567,19 @@
    "bps": -1.3,
    "score_price": 0.13,
    "score_full": 4.55,
+   "score_news": 14.55,
+   "news": 1,
+   "news_top": {
+    "title": "Uncertainty stands around multibillion USDC empire as issuer Circle held reserves at Silicon Valley Bank",
+    "outlet": "TechCrunch",
+    "tier": "B",
+    "published_at": "2023-03-10T20:53:13Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -1052,7 +1593,7 @@
      "contribution": 0.0013
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1061,7 +1602,19 @@
    "bps": -2.0,
    "score_price": 0.2,
    "score_full": 4.62,
+   "score_news": 14.62,
+   "news": 1,
+   "news_top": {
+    "title": "Uncertainty stands around multibillion USDC empire as issuer Circle held reserves at Silicon Valley Bank",
+    "outlet": "TechCrunch",
+    "tier": "B",
+    "published_at": "2023-03-10T20:53:13Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -1075,7 +1628,7 @@
      "contribution": 0.002
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1084,7 +1637,19 @@
    "bps": -20.1,
    "score_price": 2.01,
    "score_full": 6.44,
+   "score_news": 16.44,
+   "news": 1,
+   "news_top": {
+    "title": "Uncertainty stands around multibillion USDC empire as issuer Circle held reserves at Silicon Valley Bank",
+    "outlet": "TechCrunch",
+    "tier": "B",
+    "published_at": "2023-03-10T20:53:13Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -1098,7 +1663,7 @@
      "contribution": 0.0044
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1107,7 +1672,19 @@
    "bps": -22.7,
    "score_price": 2.27,
    "score_full": 6.7,
+   "score_news": 16.7,
+   "news": 1,
+   "news_top": {
+    "title": "Uncertainty stands around multibillion USDC empire as issuer Circle held reserves at Silicon Valley Bank",
+    "outlet": "TechCrunch",
+    "tier": "B",
+    "published_at": "2023-03-10T20:53:13Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -1121,7 +1698,7 @@
      "contribution": 0.0044
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1130,7 +1707,19 @@
    "bps": -33.4,
    "score_price": 3.34,
    "score_full": 7.77,
+   "score_news": 17.77,
+   "news": 1,
+   "news_top": {
+    "title": "USDC Stablecoin Depegs From $1; Circle Says Operations Are Normal",
+    "outlet": "CoinDesk",
+    "tier": "A",
+    "published_at": "2023-03-11T00:01:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -1144,7 +1733,7 @@
      "contribution": 0.0045
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1153,7 +1742,19 @@
    "bps": -20.8,
    "score_price": 2.08,
    "score_full": 6.51,
+   "score_news": 16.51,
+   "news": 1,
+   "news_top": {
+    "title": "Binance has temporarily suspended auto-conversion of USDC to BUSD due to current market conditions, specifically related to high inflows & the increasing burden to support the conversion. This is a normal risk-management procedural step to take while we monitor the situation.",
+    "outlet": "Binance (tweet, @binance)",
+    "tier": "A",
+    "published_at": "2023-03-11T01:12:14Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -1167,7 +1768,7 @@
      "contribution": 0.0045
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1176,7 +1777,19 @@
    "bps": -7.0,
    "score_price": 0.7,
    "score_full": 5.13,
+   "score_news": 15.13,
+   "news": 1,
+   "news_top": {
+    "title": "Binance has temporarily suspended auto-conversion of USDC to BUSD due to current market conditions, specifically related to high inflows & the increasing burden to support the conversion. This is a normal risk-management procedural step to take while we monitor the situation.",
+    "outlet": "Binance (tweet, @binance)",
+    "tier": "A",
+    "published_at": "2023-03-11T01:12:14Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -1190,7 +1803,7 @@
      "contribution": 0.0045
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1199,7 +1812,19 @@
    "bps": -30.0,
    "score_price": 3.0,
    "score_full": 7.44,
+   "score_news": 17.44,
+   "news": 1,
+   "news_top": {
+    "title": "Binance has temporarily suspended auto-conversion of USDC to BUSD due to current market conditions, specifically related to high inflows & the increasing burden to support the conversion. This is a normal risk-management procedural step to take while we monitor the situation.",
+    "outlet": "Binance (tweet, @binance)",
+    "tier": "A",
+    "published_at": "2023-03-11T01:12:14Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -1213,7 +1838,7 @@
      "contribution": 0.0045
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1222,10 +1847,22 @@
    "bps": -137.8,
    "score_price": 13.78,
    "score_full": 18.22,
+   "score_news": 28.22,
+   "news": 1,
+   "news_top": {
+    "title": "Binance has temporarily suspended auto-conversion of USDC to BUSD due to current market conditions, specifically related to high inflows & the increasing burden to support the conversion. This is a normal risk-management procedural step to take while we monitor the situation.",
+    "outlet": "Binance (tweet, @binance)",
+    "tier": "A",
+    "published_at": "2023-03-11T01:12:14Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.1378
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1236,7 +1873,7 @@
      "contribution": 0.0046
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1245,10 +1882,22 @@
    "bps": -670.0,
    "score_price": 50.0,
    "score_full": 54.44,
+   "score_news": 64.44,
+   "news": 1,
+   "news_top": {
+    "title": "USDC Stablecoin Depegs, Crypto Market Goes Haywire After Silicon Valley Bank Collapses",
+    "outlet": "CoinDesk",
+    "tier": "A",
+    "published_at": "2023-03-11T05:51:00Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.5
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1259,7 +1908,7 @@
      "contribution": 0.0046
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1268,10 +1917,22 @@
    "bps": -1180.6,
    "score_price": 50.0,
    "score_full": 54.44,
+   "score_news": 64.44,
+   "news": 1,
+   "news_top": {
+    "title": "USDC Stablecoin Depegs, Crypto Market Goes Haywire After Silicon Valley Bank Collapses",
+    "outlet": "CoinDesk",
+    "tier": "A",
+    "published_at": "2023-03-11T05:51:00Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.5
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1282,7 +1943,7 @@
      "contribution": 0.0046
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1291,10 +1952,22 @@
    "bps": -1373.3,
    "score_price": 50.0,
    "score_full": 54.45,
+   "score_news": 64.45,
+   "news": 1,
+   "news_top": {
+    "title": "USDC Stablecoin Depegs, Crypto Market Goes Haywire After Silicon Valley Bank Collapses",
+    "outlet": "CoinDesk",
+    "tier": "A",
+    "published_at": "2023-03-11T05:51:00Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.5
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1305,7 +1978,7 @@
      "contribution": 0.0046
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1314,10 +1987,22 @@
    "bps": -800.0,
    "score_price": 50.0,
    "score_full": 54.45,
+   "score_news": 64.45,
+   "news": 1,
+   "news_top": {
+    "title": "USDC Stablecoin Depegs, Crypto Market Goes Haywire After Silicon Valley Bank Collapses",
+    "outlet": "CoinDesk",
+    "tier": "A",
+    "published_at": "2023-03-11T05:51:00Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.5
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1328,7 +2013,7 @@
      "contribution": 0.0047
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1337,10 +2022,22 @@
    "bps": -979.5,
    "score_price": 50.0,
    "score_full": 54.45,
+   "score_news": 64.45,
+   "news": 1,
+   "news_top": {
+    "title": "USDC Stablecoin Depegs, Crypto Market Goes Haywire After Silicon Valley Bank Collapses",
+    "outlet": "CoinDesk",
+    "tier": "A",
+    "published_at": "2023-03-11T05:51:00Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.5
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1351,7 +2048,7 @@
      "contribution": 0.0047
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1360,10 +2057,22 @@
    "bps": -1163.6,
    "score_price": 50.0,
    "score_full": 54.45,
+   "score_news": 64.45,
+   "news": 1,
+   "news_top": {
+    "title": "USDC Stablecoin Depegs, Crypto Market Goes Haywire After Silicon Valley Bank Collapses",
+    "outlet": "CoinDesk",
+    "tier": "A",
+    "published_at": "2023-03-11T05:51:00Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.5
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1374,7 +2083,7 @@
      "contribution": 0.0047
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1383,10 +2092,22 @@
    "bps": -908.9,
    "score_price": 50.0,
    "score_full": 54.46,
+   "score_news": 64.46,
+   "news": 1,
+   "news_top": {
+    "title": "USDC Stablecoin Depegs, Crypto Market Goes Haywire After Silicon Valley Bank Collapses",
+    "outlet": "CoinDesk",
+    "tier": "A",
+    "published_at": "2023-03-11T05:51:00Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.5
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1397,7 +2118,7 @@
      "contribution": 0.0047
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1406,10 +2127,22 @@
    "bps": -955.4,
    "score_price": 50.0,
    "score_full": 54.46,
+   "score_news": 64.46,
+   "news": 1,
+   "news_top": {
+    "title": "USDC Stablecoin Depegs, Crypto Market Goes Haywire After Silicon Valley Bank Collapses",
+    "outlet": "CoinDesk",
+    "tier": "A",
+    "published_at": "2023-03-11T05:51:00Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.5
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1420,7 +2153,7 @@
      "contribution": 0.0047
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1429,10 +2162,22 @@
    "bps": -884.2,
    "score_price": 50.0,
    "score_full": 54.46,
+   "score_news": 64.46,
+   "news": 1,
+   "news_top": {
+    "title": "USDC Stablecoin Depegs, Crypto Market Goes Haywire After Silicon Valley Bank Collapses",
+    "outlet": "CoinDesk",
+    "tier": "A",
+    "published_at": "2023-03-11T05:51:00Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.5
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1443,7 +2188,7 @@
      "contribution": 0.0048
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1452,10 +2197,22 @@
    "bps": -850.0,
    "score_price": 50.0,
    "score_full": 54.46,
+   "score_news": 64.46,
+   "news": 1,
+   "news_top": {
+    "title": "USDC Stablecoin Depegs, Crypto Market Goes Haywire After Silicon Valley Bank Collapses",
+    "outlet": "CoinDesk",
+    "tier": "A",
+    "published_at": "2023-03-11T05:51:00Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.5
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1466,7 +2223,7 @@
      "contribution": 0.0048
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1475,10 +2232,22 @@
    "bps": -760.1,
    "score_price": 50.0,
    "score_full": 54.46,
+   "score_news": 64.46,
+   "news": 1,
+   "news_top": {
+    "title": "USDC Stablecoin Depegs, Crypto Market Goes Haywire After Silicon Valley Bank Collapses",
+    "outlet": "CoinDesk",
+    "tier": "A",
+    "published_at": "2023-03-11T05:51:00Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.5
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1489,7 +2258,7 @@
      "contribution": 0.0048
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1498,10 +2267,22 @@
    "bps": -716.1,
    "score_price": 50.0,
    "score_full": 54.47,
+   "score_news": 64.47,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.5
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1512,7 +2293,7 @@
      "contribution": 0.0048
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1521,10 +2302,22 @@
    "bps": -499.9,
    "score_price": 49.99,
    "score_full": 54.46,
+   "score_news": 64.46,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.4999
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1535,7 +2328,7 @@
      "contribution": 0.0049
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1544,10 +2337,22 @@
    "bps": -464.1,
    "score_price": 46.41,
    "score_full": 50.88,
+   "score_news": 60.88,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.4641
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1558,7 +2363,7 @@
      "contribution": 0.0049
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1567,10 +2372,22 @@
    "bps": -452.0,
    "score_price": 45.2,
    "score_full": 49.67,
+   "score_news": 59.67,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.452
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1581,7 +2398,7 @@
      "contribution": 0.0049
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1590,10 +2407,22 @@
    "bps": -266.7,
    "score_price": 26.67,
    "score_full": 31.15,
+   "score_news": 41.15,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.2667
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1604,7 +2433,7 @@
      "contribution": 0.0049
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1613,10 +2442,22 @@
    "bps": -410.9,
    "score_price": 41.09,
    "score_full": 45.57,
+   "score_news": 55.57,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.4109
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1627,7 +2468,7 @@
      "contribution": 0.005
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1636,10 +2477,22 @@
    "bps": -499.8,
    "score_price": 49.98,
    "score_full": 54.46,
+   "score_news": 64.46,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.4998
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1650,7 +2503,7 @@
      "contribution": 0.005
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1659,10 +2512,22 @@
    "bps": -314.7,
    "score_price": 31.47,
    "score_full": 35.95,
+   "score_news": 45.95,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.3147
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1673,7 +2538,7 @@
      "contribution": 0.005
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1682,10 +2547,22 @@
    "bps": -323.7,
    "score_price": 32.37,
    "score_full": 36.86,
+   "score_news": 46.86,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.3237
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1696,7 +2573,7 @@
      "contribution": 0.005
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1705,10 +2582,22 @@
    "bps": -150.0,
    "score_price": 15.0,
    "score_full": 19.49,
+   "score_news": 29.49,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.15
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1719,7 +2608,7 @@
      "contribution": 0.005
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1728,10 +2617,22 @@
    "bps": -150.0,
    "score_price": 15.0,
    "score_full": 19.49,
+   "score_news": 29.49,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.15
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1742,7 +2643,7 @@
      "contribution": 0.0051
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1751,10 +2652,22 @@
    "bps": -150.0,
    "score_price": 15.0,
    "score_full": 19.49,
+   "score_news": 29.49,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.15
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1765,7 +2678,7 @@
      "contribution": 0.0051
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1774,10 +2687,22 @@
    "bps": -150.0,
    "score_price": 15.0,
    "score_full": 19.49,
+   "score_news": 29.49,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.15
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1788,7 +2713,7 @@
      "contribution": 0.0051
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1797,10 +2722,22 @@
    "bps": -200.0,
    "score_price": 20.0,
    "score_full": 24.5,
+   "score_news": 34.5,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.2
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1811,7 +2748,7 @@
      "contribution": 0.0051
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1820,10 +2757,22 @@
    "bps": -426.3,
    "score_price": 42.63,
    "score_full": 47.13,
+   "score_news": 57.13,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.4263
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1834,7 +2783,7 @@
      "contribution": 0.0052
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1843,10 +2792,22 @@
    "bps": -524.3,
    "score_price": 50.0,
    "score_full": 54.5,
+   "score_news": 64.5,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.5
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1857,7 +2818,7 @@
      "contribution": 0.0052
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1866,10 +2827,22 @@
    "bps": -476.6,
    "score_price": 47.66,
    "score_full": 52.16,
+   "score_news": 62.16,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.4766
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1880,7 +2853,7 @@
      "contribution": 0.0052
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1889,10 +2862,22 @@
    "bps": -444.7,
    "score_price": 44.47,
    "score_full": 48.98,
+   "score_news": 58.98,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.4447
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1903,7 +2888,7 @@
      "contribution": 0.0052
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1912,10 +2897,22 @@
    "bps": -412.0,
    "score_price": 41.2,
    "score_full": 45.71,
+   "score_news": 55.71,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.412
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1926,7 +2923,7 @@
      "contribution": 0.0053
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1935,10 +2932,22 @@
    "bps": -421.1,
    "score_price": 42.11,
    "score_full": 46.62,
+   "score_news": 56.62,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.4211
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1949,7 +2958,7 @@
      "contribution": 0.0053
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1958,10 +2967,22 @@
    "bps": -427.7,
    "score_price": 42.77,
    "score_full": 47.28,
+   "score_news": 57.28,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.4277
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1972,7 +2993,7 @@
      "contribution": 0.0053
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -1981,10 +3002,22 @@
    "bps": -417.4,
    "score_price": 41.74,
    "score_full": 46.26,
+   "score_news": 56.26,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.4174
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -1995,7 +3028,7 @@
      "contribution": 0.0053
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2004,10 +3037,22 @@
    "bps": -409.0,
    "score_price": 40.9,
    "score_full": 45.42,
+   "score_news": 55.42,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.409
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -2018,7 +3063,7 @@
      "contribution": 0.0054
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2027,10 +3072,22 @@
    "bps": -409.6,
    "score_price": 40.96,
    "score_full": 45.48,
+   "score_news": 55.48,
+   "news": 1,
+   "news_top": {
+    "title": "Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure",
+    "outlet": "CNBC",
+    "tier": "A",
+    "published_at": "2023-03-11T16:03:23Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.4096
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -2041,7 +3098,7 @@
      "contribution": 0.0054
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2050,6 +3107,9 @@
    "bps": -414.4,
    "score_price": 41.44,
    "score_full": 45.96,
+   "score_news": 45.96,
+   "news": 0,
+   "news_top": null,
    "factors": [
     {
      "metric": "peg_deviation_bps",
@@ -2064,7 +3124,7 @@
      "contribution": 0.0054
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2073,6 +3133,9 @@
    "bps": -343.0,
    "score_price": 34.3,
    "score_full": 38.82,
+   "score_news": 38.82,
+   "news": 0,
+   "news_top": null,
    "factors": [
     {
      "metric": "peg_deviation_bps",
@@ -2087,7 +3150,7 @@
      "contribution": 0.0054
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2096,6 +3159,9 @@
    "bps": -304.4,
    "score_price": 30.44,
    "score_full": 34.97,
+   "score_news": 34.97,
+   "news": 0,
+   "news_top": null,
    "factors": [
     {
      "metric": "peg_deviation_bps",
@@ -2110,7 +3176,7 @@
      "contribution": 0.0054
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2119,6 +3185,9 @@
    "bps": -326.9,
    "score_price": 32.69,
    "score_full": 37.22,
+   "score_news": 37.22,
+   "news": 0,
+   "news_top": null,
    "factors": [
     {
      "metric": "peg_deviation_bps",
@@ -2133,7 +3202,7 @@
      "contribution": 0.0055
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2142,6 +3211,9 @@
    "bps": -308.0,
    "score_price": 30.8,
    "score_full": 35.33,
+   "score_news": 35.33,
+   "news": 0,
+   "news_top": null,
    "factors": [
     {
      "metric": "peg_deviation_bps",
@@ -2156,7 +3228,7 @@
      "contribution": 0.0055
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2165,6 +3237,9 @@
    "bps": -316.7,
    "score_price": 31.67,
    "score_full": 36.2,
+   "score_news": 36.2,
+   "news": 0,
+   "news_top": null,
    "factors": [
     {
      "metric": "peg_deviation_bps",
@@ -2179,7 +3254,7 @@
      "contribution": 0.0055
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2188,10 +3263,22 @@
    "bps": -105.5,
    "score_price": 10.55,
    "score_full": 15.09,
+   "score_news": 25.09,
+   "news": 1,
+   "news_top": {
+    "title": "Crypto-Friendly Signature Bank Shut Down by State Regulators",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-12T22:25:00Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.1055
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -2202,7 +3289,7 @@
      "contribution": 0.0055
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2211,7 +3298,19 @@
    "bps": -84.7,
    "score_price": 8.47,
    "score_full": 13.01,
+   "score_news": 23.01,
+   "news": 1,
+   "news_top": {
+    "title": "NYC-based Signature Bank fails, and banking regulators invoke ‘systemic risk exception’ for all depositors being made whole",
+    "outlet": "Fortune (Bloomberg syndicated)",
+    "tier": "B",
+    "published_at": "2023-03-12T23:05:51Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.0847
@@ -2225,7 +3324,7 @@
      "contribution": 0.0056
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2234,7 +3333,19 @@
    "bps": -48.4,
    "score_price": 4.84,
    "score_full": 9.38,
+   "score_news": 19.38,
+   "news": 1,
+   "news_top": {
+    "title": "Superintendent Adrienne A. Harris Announces New York Department of Financial Services Takes Possession of Signature Bank",
+    "outlet": "New York DFS (press release)",
+    "tier": "B",
+    "published_at": "2023-03-12"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.0484
@@ -2248,7 +3359,7 @@
      "contribution": 0.0056
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2257,7 +3368,19 @@
    "bps": -59.1,
    "score_price": 5.91,
    "score_full": 10.45,
+   "score_news": 20.45,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.0591
@@ -2271,7 +3394,7 @@
      "contribution": 0.0056
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2280,7 +3403,19 @@
    "bps": -53.5,
    "score_price": 5.35,
    "score_full": 9.9,
+   "score_news": 19.9,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.0535
@@ -2294,7 +3429,7 @@
      "contribution": 0.0056
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2303,7 +3438,19 @@
    "bps": -69.9,
    "score_price": 6.99,
    "score_full": 11.54,
+   "score_news": 21.54,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.0699
@@ -2317,7 +3464,7 @@
      "contribution": 0.0057
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2326,7 +3473,19 @@
    "bps": -82.6,
    "score_price": 8.26,
    "score_full": 12.81,
+   "score_news": 22.81,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.0826
@@ -2340,7 +3499,7 @@
      "contribution": 0.0057
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2349,7 +3508,19 @@
    "bps": -97.2,
    "score_price": 9.72,
    "score_full": 14.27,
+   "score_news": 24.27,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.0972
@@ -2363,7 +3534,7 @@
      "contribution": 0.0057
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2372,7 +3543,19 @@
    "bps": -90.3,
    "score_price": 9.03,
    "score_full": 13.58,
+   "score_news": 23.58,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.0903
@@ -2386,7 +3569,7 @@
      "contribution": 0.0057
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2395,7 +3578,19 @@
    "bps": -84.9,
    "score_price": 8.49,
    "score_full": 13.05,
+   "score_news": 23.05,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.0849
@@ -2409,7 +3604,7 @@
      "contribution": 0.0057
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2418,10 +3613,22 @@
    "bps": -115.7,
    "score_price": 11.57,
    "score_full": 16.13,
+   "score_news": 26.13,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.1157
+    },
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
     },
     {
      "metric": "reserve_cash_ratio",
@@ -2432,7 +3639,7 @@
      "contribution": 0.0058
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2441,7 +3648,19 @@
    "bps": -96.4,
    "score_price": 9.64,
    "score_full": 14.2,
+   "score_news": 24.2,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.0964
@@ -2455,7 +3674,7 @@
      "contribution": 0.0058
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2464,9 +3683,21 @@
    "bps": -100.0,
    "score_price": 10.0,
    "score_full": 14.56,
+   "score_news": 24.56,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
+     "contribution": 0.1
+    },
+    {
+     "metric": "news_risk_flag",
      "contribution": 0.1
     },
     {
@@ -2478,7 +3709,7 @@
      "contribution": 0.0058
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2487,9 +3718,21 @@
    "bps": -100.0,
    "score_price": 10.0,
    "score_full": 14.57,
+   "score_news": 24.57,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
     {
      "metric": "peg_deviation_bps",
+     "contribution": 0.1
+    },
+    {
+     "metric": "news_risk_flag",
      "contribution": 0.1
     },
     {
@@ -2501,7 +3744,7 @@
      "contribution": 0.0058
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2510,7 +3753,19 @@
    "bps": -94.2,
    "score_price": 9.42,
    "score_full": 13.99,
+   "score_news": 23.99,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.0942
@@ -2524,7 +3779,7 @@
      "contribution": 0.0059
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2533,7 +3788,19 @@
    "bps": -36.4,
    "score_price": 3.64,
    "score_full": 8.21,
+   "score_news": 18.21,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -2547,7 +3814,7 @@
      "contribution": 0.0059
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2556,7 +3823,19 @@
    "bps": -7.9,
    "score_price": 0.79,
    "score_full": 5.36,
+   "score_news": 15.36,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -2570,7 +3849,7 @@
      "contribution": 0.0059
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2579,7 +3858,19 @@
    "bps": -13.4,
    "score_price": 1.34,
    "score_full": 5.92,
+   "score_news": 15.92,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -2593,7 +3884,7 @@
      "contribution": 0.0059
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2602,7 +3893,19 @@
    "bps": -20.7,
    "score_price": 2.07,
    "score_full": 6.65,
+   "score_news": 16.65,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -2616,7 +3919,7 @@
      "contribution": 0.006
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2625,7 +3928,19 @@
    "bps": -18.8,
    "score_price": 1.88,
    "score_full": 6.46,
+   "score_news": 16.46,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -2639,7 +3954,7 @@
      "contribution": 0.006
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2648,7 +3963,19 @@
    "bps": -14.9,
    "score_price": 1.49,
    "score_full": 6.07,
+   "score_news": 16.07,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -2662,7 +3989,7 @@
      "contribution": 0.006
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2671,7 +3998,19 @@
    "bps": -13.0,
    "score_price": 1.3,
    "score_full": 5.88,
+   "score_news": 15.88,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -2685,7 +4024,7 @@
      "contribution": 0.006
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2694,7 +4033,19 @@
    "bps": -26.8,
    "score_price": 2.68,
    "score_full": 7.27,
+   "score_news": 17.27,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -2708,7 +4059,7 @@
      "contribution": 0.006
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2717,7 +4068,19 @@
    "bps": -33.5,
    "score_price": 3.35,
    "score_full": 7.94,
+   "score_news": 17.94,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "reserve_cash_ratio",
      "contribution": 0.0398
@@ -2731,7 +4094,7 @@
      "contribution": 0.0061
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2740,7 +4103,19 @@
    "bps": -40.4,
    "score_price": 4.04,
    "score_full": 8.63,
+   "score_news": 18.63,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.0404
@@ -2754,7 +4129,7 @@
      "contribution": 0.0061
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   },
   {
@@ -2763,7 +4138,19 @@
    "bps": -44.7,
    "score_price": 4.47,
    "score_full": 9.06,
+   "score_news": 19.06,
+   "news": 1,
+   "news_top": {
+    "title": "Circle Scrambles to Right USDC After Signature Bank Failure",
+    "outlet": "CoinDesk",
+    "tier": "B",
+    "published_at": "2023-03-13T01:55:00Z"
+   },
    "factors": [
+    {
+     "metric": "news_risk_flag",
+     "contribution": 0.1
+    },
     {
      "metric": "peg_deviation_bps",
      "contribution": 0.0447
@@ -2777,7 +4164,7 @@
      "contribution": 0.0061
     }
    ],
-   "confidence": 0.83,
+   "confidence": 1.0,
    "breached": false
   }
  ],
@@ -6824,7 +8211,65 @@
   "first_minus_50bps": "2023-03-11T05:00:00Z",
   "crisis_max_score_price": 50.0,
   "crisis_max_score_full": 54.5,
+  "crisis_max_score_news": 64.5,
   "crisis_hours_breached": 0,
+  "lines": {
+   "score_price": {
+    "max": 50.0,
+    "alert": {
+     "first_at": null,
+     "hours_before_low": null
+    },
+    "approval": {
+     "first_at": null,
+     "hours_before_low": null
+    }
+   },
+   "score_full": {
+    "max": 54.5,
+    "alert": {
+     "first_at": null,
+     "hours_before_low": null
+    },
+    "approval": {
+     "first_at": null,
+     "hours_before_low": null
+    }
+   },
+   "score_news": {
+    "max": 64.5,
+    "alert": {
+     "first_at": null,
+     "hours_before_low": null
+    },
+    "approval": {
+     "first_at": null,
+     "hours_before_low": null
+    }
+   }
+  },
+  "news": {
+   "file": "data/historical/signals_usdc_2023_news_hourly.json",
+   "rubric_version": "v2",
+   "engine_rubric_version": "v2",
+   "hours_on": 114,
+   "on_segments": [
+    {
+     "from": "2023-03-09T01:00:00Z",
+     "to": "2023-03-12T16:00:00Z"
+    },
+    {
+     "from": "2023-03-12T23:00:00Z",
+     "to": "2023-03-14T00:00:00Z"
+    }
+   ],
+   "first_on_in_replay": "2023-03-09T01:00:00Z",
+   "first_on": "2023-03-08T22:00:00Z",
+   "streak_start": "2023-03-08T22:00:00Z",
+   "streak_hours_before_low": 58.0,
+   "streak_hours_before_minus_50bps": 55.0,
+   "calm": null
+  },
   "calm_max_abs_bps": 42.3,
   "calm_max_score": 4.23,
   "calm_hours_breached": 0
@@ -6890,7 +8335,7 @@
    }
   ],
   "event": {
-   "event_id": "d2171923-0c06-491e-8793-602d70400d5d",
+   "event_id": "9991876a-d0c7-45bc-9d07-1c357e363549",
    "coin": "USDC",
    "scored_at": "2023-03-11T08:00:00Z",
    "risk_score": 93.0,
@@ -6920,7 +8365,7 @@
    "threshold_breached": true
   },
   "alert": {
-   "alert_id": "d2171923-0c06-491e-8793-602d70400d5d",
+   "alert_id": "9991876a-d0c7-45bc-9d07-1c357e363549",
    "incident_type": "stablecoin_depeg_risk_usdc",
    "severity": "high",
    "timestamp": "2023-03-11T08:00:00Z",
@@ -6934,7 +8379,7 @@
    "description": "USDC depeg risk score 93.0 (confidence 1.00)"
   },
   "calm_event": {
-   "event_id": "6ff7e993-648b-4b3c-8d14-3f52c3707991",
+   "event_id": "746db97e-c7d9-4eda-9d69-c35ce4868c19",
    "coin": "USDC",
    "scored_at": "2023-03-11T02:00:00Z",
    "risk_score": 28.8,
