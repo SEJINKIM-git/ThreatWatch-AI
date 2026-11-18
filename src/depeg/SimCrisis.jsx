@@ -8,7 +8,8 @@ import { LineChart, FactorBars, SERIES, INK } from "./charts.jsx";
  * 2) 서버(/api/depeg-sim)가 실제 엔진으로 시각별 점수를 매긴다
  * 3) 시간 순서대로 재생 — 점수가 85를 처음 넘는 순간 경보를 한 번 보낸다
  *    (시연 키가 맞을 때만 실제 전송. 키가 없으면 '보냈을 것'만 표시)
- * 4) ThreatWatch가 P1로 접수 → 승인 메일 → 메일에서 승인/반려 → 이 화면에도 결과가 뜬다
+ * 4) ThreatWatch가 P1로 접수 → 승인 메일(가격 변동 + 투자자·발행사 권고안)
+ *    → 메일에서 권고안 발송을 승인/반려 → 이 화면에도 결과가 뜬다
  */
 
 const SPEEDS = [
@@ -54,9 +55,9 @@ const STEP_TEXT = {
   sending: { ko: "경보 전송 중…", en: "Sending alert…", tone: "info" },
   accepted: { ko: "ThreatWatch 접수 — 처리 대기", en: "Accepted by ThreatWatch", tone: "info" },
   waiting: { ko: "승인 메일 발송됨 — 메일함을 확인하세요", en: "Approval email sent — check your inbox", tone: "warn" },
-  approve: { ko: "승인됨 — 대응 실행", en: "Approved — response runs", tone: "good" },
-  reject: { ko: "반려됨 — 기록만 남김", en: "Rejected — recorded only", tone: "neutral" },
-  expired: { ko: "만료 — 무응답도 결과로 기록", en: "Expired — silence recorded", tone: "bad" },
+  approve: { ko: "승인됨 — 권고안 발송 확정", en: "Approved — advisory send confirmed", tone: "good" },
+  reject: { ko: "반려됨 — 권고안 미발송, 감시 유지", en: "Rejected — advisory not sent, monitoring continues", tone: "neutral" },
+  expired: { ko: "만료 — 권고안 미발송", en: "Expired — advisory not sent", tone: "bad" },
   dry: { ko: "미리보기 — 시연 키가 없어 발송하지 않음", en: "Preview — no demo key, nothing sent", tone: "neutral" },
   error: { ko: "전송 실패", en: "Send failed", tone: "bad" },
 };
@@ -185,8 +186,8 @@ export default function SimCrisis({ L, lang, labelOf, fmtTime }) {
       <h2 className="dp-h2">{L("위험이 급증하면, 결정은 사람이 내립니다", "When risk spikes, a person decides")}</h2>
       <p className="dp-lede" style={{ fontSize: 15.5 }}>
         {L(
-          "직접 만든 모의 위기 데이터를 올리면 실제 엔진이 시각별로 점수를 매기고, 시간 순서대로 재생합니다. 점수가 85점을 처음 넘는 순간 ThreatWatch로 경보가 한 번 나가고, 승인 요청 메일에서 사람이 승인하거나 반려합니다.",
-          "Upload your own crisis data; the real engine scores every hour and plays it back. The first time the score crosses 85, one alert goes to ThreatWatch and a person approves or rejects it from the email.",
+          "직접 만든 모의 위기 데이터를 올리면 실제 엔진이 시각별로 점수를 매기고, 시간 순서대로 재생합니다. 점수가 85점을 처음 넘는 순간 ThreatWatch로 경보가 한 번 나가고, 사람이 메일에서 가격 변동과 권고안을 보고 승인 또는 반려합니다.",
+          "Upload your own crisis data; the real engine scores every hour and plays it back. The first time the score crosses 85, one alert goes to ThreatWatch and a person reads the price move and the advisory in the email, then approves or rejects sending it.",
         )}
       </p>
 
@@ -316,14 +317,14 @@ export default function SimCrisis({ L, lang, labelOf, fmtTime }) {
               {flow.step === "error" && <p className="dp-small" style={{ margin: "10px 0 0", color: "var(--bad)" }}>{flow.error}</p>}
               {["accepted", "waiting"].includes(flow.step) && (
                 <p className="dp-small" style={{ margin: "10px 0 0" }}>
-                  {L("메일의 승인/반려 링크를 누르면 몇 초 안에 이곳에 결과가 표시됩니다. 응답이 없으면 60분 뒤 만료됩니다.",
-                     "Click approve or reject in the email; the result shows here within seconds. With no answer it expires after 60 minutes.")}
+                  {L("메일에서 가격 변동과 투자자·발행사 권고안을 보고 승인 또는 반려를 누르면 몇 초 안에 이곳에 결과가 표시됩니다. 응답이 없으면 60분 뒤 만료되고 권고안은 발송되지 않습니다.",
+                     "Read the price move and the investor/issuer advisory in the email, then click approve or reject; the result shows here within seconds. With no answer it expires after 60 minutes and the advisory is not sent.")}
                 </p>
               )}
               {flow.step === "dry" && (
                 <p className="dp-small" style={{ margin: "10px 0 0" }}>
-                  {L(`${flow.index + 1}번째 시간에 ${thrSend}점을 넘었습니다. 실제 시연에서는 이 순간 승인 메일이 나갑니다.`,
-                     `Crossed ${thrSend} at hour ${flow.index + 1}. In the real demo, the approval email goes out now.`)}
+                  {L(`${flow.index + 1}번째 시간에 ${thrSend}점을 넘었습니다. 실제 시연에서는 이 순간 가격 변동과 권고안이 담긴 승인 메일이 나갑니다.`,
+                     `Crossed ${thrSend} at hour ${flow.index + 1}. In the real demo, the approval email with the price move and the advisory goes out now.`)}
                 </p>
               )}
             </div>
