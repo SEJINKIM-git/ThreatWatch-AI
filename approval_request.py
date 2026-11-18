@@ -13,6 +13,8 @@ import time
 
 import boto3
 
+import depeg_advisory
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -24,6 +26,10 @@ CALLBACK_URL = os.environ["CALLBACK_URL"]
 # 상태 머신 타임아웃보다 넉넉하게 잡습니다.
 # 승인 레코드가 먼저 사라지면 콜백이 실패합니다.
 APPROVAL_TTL_SEC = 7200
+
+# 상태 머신이 실제로 승인을 기다리는 시간 (terraform var.approval_timeout_sec 와 같은 값).
+# 디페그 메일의 만료 안내는 레코드 보관 시간이 아니라 이 값을 보여 준다.
+APPROVAL_TIMEOUT_SEC = int(os.environ.get("APPROVAL_TIMEOUT_SEC", "3600"))
 
 _table = boto3.resource("dynamodb", region_name=REGION).Table(APPROVALS_TABLE)
 _sns = boto3.client("sns", region_name=REGION)
@@ -46,7 +52,22 @@ def build_message(case: dict, approval_id: str, callback_url: str) -> tuple:
     hours = APPROVAL_TTL_SEC // 3600
     incident_type = str(case.get("incident_type", ""))
 
+    market = None
     if incident_type.startswith(DEPEG_PREFIX):
+        market = depeg_advisory.parse_market(case.get("summary"))
+
+    if market:
+        # 가격 정보(MKT)가 온 디페그 경보: 가격 변동 + 권고안을 보여 주고 발송 여부를 묻는다.
+        subject = depeg_advisory.request_subject(market, alert_id)
+        lines = depeg_advisory.request_lines(
+            market, alert_id, approve_url, reject_url, APPROVAL_TIMEOUT_SEC
+        )
+        return subject, lines
+
+    if incident_type.startswith(DEPEG_PREFIX):
+        # 가격 정보가 없는 디페그 경보 (대시보드가 MKT 를 보내기 전 버전과의 하위 호환).
+        wait = depeg_advisory.timeout_text(APPROVAL_TIMEOUT_SEC)
+        minutes = APPROVAL_TIMEOUT_SEC // 60
         # SNS 메일 제목은 ASCII만 허용된다 (한글·em dash가 있으면 publish 가 실패). 본문은 UTF-8 가능.
         subject = f"[APPROVAL] Depeg alert {alert_id[:8]} - response decision required"
         lines = [
@@ -68,8 +89,8 @@ def build_message(case: dict, approval_id: str, callback_url: str) -> tuple:
             "Reject — false alarm, record only:",
             f"  {reject_url}",
             "",
-            f"이 요청은 {hours}시간 뒤 만료됩니다. 무응답도 결과로 기록되고 상급자에게 통지됩니다.",
-            f"This request expires in {hours} hours; no answer is recorded and escalated.",
+            f"이 요청은 {wait} 뒤 만료됩니다. 무응답도 결과로 기록되고 상급자에게 통지됩니다.",
+            f"This request expires in {minutes} minutes; no answer is recorded and escalated.",
         ]
         return subject, lines
 

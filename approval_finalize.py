@@ -11,6 +11,7 @@ import time
 
 import boto3
 
+import depeg_advisory
 from topic_router import resolve_topic_arn
 
 logger = logging.getLogger()
@@ -38,6 +39,34 @@ MESSAGES = {
         "This case remains open and requires attention.",
     ),
 }
+
+
+def build_result(decision: str, case: dict) -> tuple:
+    """결과 메일의 제목과 본문 줄을 만든다. 순수 함수.
+
+    디페그 건은 "권고안 발송" 결정의 결과를 알린다. 보안 건은 기존 문구 그대로다.
+    """
+    alert_id = case.get("alert_id")
+    incident_type = case.get("incident_type")
+    _, detail = MESSAGES[decision]
+    subject = f"[{decision.upper()}] {alert_id}"
+
+    if depeg_advisory.is_depeg(incident_type):
+        if decision == "expired":
+            # 만료는 기존 경로 유지 + 권고안이 나가지 않았음을 한 줄로 밝힌다.
+            lines = [detail, depeg_advisory.RESULT_TEXT["expired"]]
+        else:
+            subject = depeg_advisory.result_subject(decision, incident_type, alert_id)
+            lines = [depeg_advisory.RESULT_TEXT[decision]]
+    else:
+        lines = [detail]
+
+    lines += [
+        "",
+        f"Alert ID : {alert_id}",
+        f"Outcome  : {decision}",
+    ]
+    return subject, lines
 
 
 def handler(event, context):
@@ -71,21 +100,14 @@ def handler(event, context):
         logger.error(f"❌ case update failed for {alert_id}: {e}")
         raise
 
-    subject, detail = MESSAGES[decision]
-
-    lines = [
-        detail,
-        "",
-        f"Alert ID : {alert_id}",
-        f"Outcome  : {decision}",
-    ]
+    subject, lines = build_result(decision, case)
 
     # 디페그 케이스의 결과 알림은 트리아지와 같은 라우팅 규칙으로
     # 전용 토픽에 발행합니다. incident_type은 콜백 경로에서는
     # 승인 레코드에서, 만료 경로에서는 원본 입력에서 옵니다.
     _sns.publish(
         TopicArn=resolve_topic_arn(case.get("incident_type")),
-        Subject=f"[{decision.upper()}] {alert_id}"[:100],
+        Subject=subject[:100],
         Message="\n".join(lines),
     )
 

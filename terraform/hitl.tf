@@ -68,10 +68,20 @@ resource "aws_iam_role_policy_attachment" "approval_request_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+# depeg_advisory.py(디페그 권고 규칙·문구)를 함께 담습니다.
 data "archive_file" "approval_request" {
   type        = "zip"
-  source_file = "${path.module}/../approval_request.py"
   output_path = "${path.module}/.build/approval_request.zip"
+
+  source {
+    filename = "approval_request.py"
+    content  = file("${path.module}/../approval_request.py")
+  }
+
+  source {
+    filename = "depeg_advisory.py"
+    content  = file("${path.module}/../depeg_advisory.py")
+  }
 }
 
 resource "aws_cloudwatch_log_group" "approval_request" {
@@ -97,6 +107,8 @@ resource "aws_lambda_function" "approval_request" {
       APPROVALS_TABLE = aws_dynamodb_table.approvals.name
       TOPIC_ARN       = aws_sns_topic.escalations.arn
       CALLBACK_URL    = "${aws_api_gateway_stage.prod.invoke_url}/approvals"
+      # 메일의 만료 안내가 상태 머신 대기 시간과 같도록 같은 변수를 넘깁니다.
+      APPROVAL_TIMEOUT_SEC = tostring(var.approval_timeout_sec)
     }
   }
 
@@ -160,8 +172,17 @@ resource "aws_iam_role_policy_attachment" "approval_callback_logs" {
 
 data "archive_file" "approval_callback" {
   type        = "zip"
-  source_file = "${path.module}/../approval_callback.py"
   output_path = "${path.module}/.build/approval_callback.zip"
+
+  source {
+    filename = "approval_callback.py"
+    content  = file("${path.module}/../approval_callback.py")
+  }
+
+  source {
+    filename = "depeg_advisory.py"
+    content  = file("${path.module}/../depeg_advisory.py")
+  }
 }
 
 resource "aws_cloudwatch_log_group" "approval_callback" {
@@ -250,6 +271,11 @@ data "archive_file" "approval_finalize" {
   source {
     filename = "topic_router.py"
     content  = file("${path.module}/../topic_router.py")
+  }
+
+  source {
+    filename = "depeg_advisory.py"
+    content  = file("${path.module}/../depeg_advisory.py")
   }
 }
 
