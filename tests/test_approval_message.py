@@ -1,4 +1,7 @@
-"""승인 요청 메일 문구 — 디페그 경보는 '대응 실행' 결정, 보안 경보는 기존 '격리' 문구 유지."""
+"""승인 요청 메일 문구 — 가격 정보(MKT)가 없는 디페그 경보는 '대응 실행' 결정, 보안 경보는 기존 '격리' 문구 유지.
+
+가격 정보가 있는 디페그 경보(권고안 발송 결정)는 tests/test_depeg_advisory.py 가 다룬다.
+"""
 import os
 
 os.environ.setdefault("APPROVALS_TABLE", "test-approvals")

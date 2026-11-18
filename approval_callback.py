@@ -16,6 +16,8 @@ import time
 
 import boto3
 
+import depeg_advisory
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -113,6 +115,11 @@ def handler(event, context):
         )
 
     logger.info(f"✅ {decision}: {alert_id}")
+
+    # 디페그 건은 "권고안 발송" 결정이다. 고정 문구만 쓴다 (입력값을 HTML 에 넣지 않음).
+    if depeg_advisory.is_depeg(item.get("incident_type")):
+        title, detail = depeg_advisory.PAGE_TEXT[decision]
+        return _page(200, title, detail)
 
     verb = "approved" if decision == "approve" else "rejected"
     return _page(
