@@ -11,7 +11,9 @@ import pytest
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, os.path.join(ROOT, "api", "_depeg"))
 
-from sim_core import RowError, build_alert, first_send_index, score_rows, validate_rows  # noqa: E402
+from sim_core import (  # noqa: E402
+    RowError, build_alert, first_send_index, market_line, score_rows, validate_rows,
+)
 
 
 def template_rows():
@@ -141,3 +143,76 @@ def test_rehearsal_file_crosses_lines_at_known_hours():
     built = build_alert(rows, 13, "sim-rehearsal.csv")
     assert built["alert"]["severity"] == "high"
     assert built["alert"]["description"].startswith("[DEMO SIMULATION · sim-rehearsal.csv · 2026-11-25T13:00:00Z]")
+
+
+# ---- 가격 정보 묶음 (MKT) — ThreatWatch 승인 메일이 읽는 계약 ----
+
+def _mkt(description):
+    assert description.count(" || MKT ") == 1
+    return dict(tok.split("=", 1) for tok in description.split(" || MKT ", 1)[1].split(" "))
+
+
+def test_market_line_for_template_spike_row():
+    rows, _ = validate_rows(template_rows())
+    built = build_alert(rows, 39, "sim-template.csv")
+    line = market_line(rows, 39, built["event"])
+    assert line.startswith(" || MKT coin=USDC price=0.9312 peg=1.0000 dev_bps=-688 ") and "\n" not in line
+    m = _mkt(line)
+    # 24시간 전(2026-11-25T15:00Z) 행의 가격은 1.0001 이다
+    assert m["ref24h"] == "1.0001" and m["chg24h_pct"] == "-6.89"
+    assert m["score"] == f"{built['event']['risk_score']:.1f}"
+    assert m["redemption_usd"] == "1600000000" and m["pool"] == "0.86" and m["news"] == "1"
+    assert m["at"] == "2026-11-26T15:00:00Z" and m["demo"] == "1"
+    d = built["alert"]["description"]
+    assert d.startswith("[DEMO SIMULATION · sim-template.csv · 2026-11-26T15:00:00Z] USDC depeg risk score")
+    assert d.endswith(line) and len(d) <= 2000
+
+
+def test_market_line_uses_first_row_when_no_row_is_24h_old():
+    with open(os.path.join(ROOT, "public", "depeg", "sim-rehearsal.csv"), encoding="utf-8") as f:
+        rows, _ = validate_rows(list(csv.DictReader(f)))
+    built = build_alert(rows, 13, "sim-rehearsal.csv")
+    m = _mkt(built["alert"]["description"])
+    first, now = rows[0]["price_usd"], rows[13]["price_usd"]
+    assert m["ref24h"] == f"{first:.4f}"
+    assert m["chg24h_pct"] == f"{(now - first) / first * 100:.2f}"
+    assert int(m["dev_bps"]) == round((now - 1) * 10000) and int(m["dev_bps"]) < 0
+
+
+def test_market_line_leaves_out_empty_optional_columns():
+    rows, _ = validate_rows([
+        {"t": "2026-11-25T00:00:00Z", "price_usd": "1.0"},
+        {"t": "2026-11-25T01:00:00Z", "price_usd": "0.93", "news_risk_flag": "1"},
+        {"t": "2026-11-25T02:00:00Z", "price_usd": "1.004"},
+    ])
+    event = {"risk_score": 91.26}
+    m = _mkt(market_line(rows, 2, event))
+    assert set(m) == {"coin", "price", "peg", "dev_bps", "chg24h_pct", "ref24h", "score", "at", "demo"}
+    assert m["dev_bps"] == "40" and m["score"] == "91.3"  # 양의 이탈은 부호 없이, 음은 '-'
+    assert _mkt(market_line(rows, 1, event))["news"] == "1"
+
+
+def test_description_stays_under_2000_and_keeps_required_keys(monkeypatch):
+    import sim_core
+    rows, _ = validate_rows(template_rows())
+    real = sim_core.to_alert_request
+
+    def long_description(pad):
+        def fake(event):
+            alert = real(event)
+            alert["description"] += " " + "x" * pad
+            return alert
+        return fake
+
+    # 선택 key 몇 개만 빠지면 맞는 길이
+    monkeypatch.setattr(sim_core, "to_alert_request", long_description(1790))
+    d = build_alert(rows, 39, "sim-template.csv")["alert"]["description"]
+    m = _mkt(d)
+    assert len(d) <= 2000 and d.startswith("[DEMO SIMULATION")
+    assert {"coin", "price", "dev_bps", "demo"} <= set(m) and "at" not in m
+
+    # 어댑터 설명만으로 2000자를 넘어도 필수 key 는 남는다
+    monkeypatch.setattr(sim_core, "to_alert_request", long_description(5000))
+    d = build_alert(rows, 39, "sim-template.csv")["alert"]["description"]
+    assert len(d) == 2000 and d.startswith("[DEMO SIMULATION")
+    assert _mkt(d) == {"coin": "USDC", "price": "0.9312", "dev_bps": "-688"}

@@ -181,20 +181,20 @@ export const OUTCOMES = [
   {
     key: "approve", tone: "good",
     ko: "승인", en: "Approve",
-    dKo: "대응 실행: 사용자 안내 1회, 자금팀 노출 축소 검토, 상황실 유지",
-    dEn: "Run the response: one user notice, treasury exposure review, war room",
+    dKo: "투자자·발행사 권고안 발송",
+    dEn: "Send the advisory to investors and the issuer",
   },
   {
     key: "reject", tone: "neutral",
     ko: "반려", en: "Reject",
-    dKo: "사유와 함께 기록. 오탐이면 엔진 담당에게 데이터 전달",
-    dEn: "Recorded with a reason; false positives go back to the engine owner",
+    dKo: "발송 안 함, 오탐 기록 후 감시 유지",
+    dEn: "Nothing sent; recorded as a false alarm, monitoring continues",
   },
   {
     key: "expire", tone: "bad",
     ko: "만료 (무응답)", en: "Expire (no answer)",
-    dKo: "무응답도 결과로 기록. 내부 보수 조치만, 사용자 안내는 보내지 않음",
-    dEn: "Silence is recorded as an outcome; internal safeguards only, no user notice",
+    dKo: "무응답도 결과로 기록. 권고안은 발송하지 않고 랩장에게 통지",
+    dEn: "Silence is recorded as an outcome; the advisory is not sent and the lab lead is notified",
   },
 ];
 

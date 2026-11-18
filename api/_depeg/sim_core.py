@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import math
 import re
+from datetime import datetime, timedelta
 from typing import Any
 
 import risk_score as engine
@@ -118,6 +119,65 @@ def first_send_index(scores: list[dict[str, Any]]) -> int | None:
     return None
 
 
+PEG = 1.0
+DESCRIPTION_MAX = 2000  # ThreatWatch API 의 description maxLength
+MKT_MARKER = " || MKT "
+# 2000자를 넘을 때 빼는 순서 (앞에서부터). coin·price·dev_bps 는 필수라 빼지 않는다.
+# demo 는 메일의 [시연] 표시를 좌우하므로 가장 마지막에 뺀다.
+MKT_DROP_ORDER = ("at", "ref24h", "chg24h_pct", "peg", "pool", "redemption_usd", "news", "score", "demo")
+
+
+def _trim(x: float, digits: int = 4) -> str:
+    return f"{x:.{digits}f}".rstrip("0").rstrip(".")
+
+
+def market_fields(rows: list[dict[str, Any]], index: int, event: dict[str, Any]) -> dict[str, str]:
+    """index 번째 행의 가격 정보를 key → 문자열 값으로 만든다 (MKT 묶음의 내용)."""
+    row = rows[index]
+    price = row["price_usd"]
+
+    # 24시간 전 가격: 24시간 전이거나 그보다 이른 행 중 가장 늦은 것. 없으면 파일 첫 행.
+    cutoff = datetime.strptime(row["t"], "%Y-%m-%dT%H:%M:%SZ") - timedelta(hours=24)
+    cutoff_t = cutoff.strftime("%Y-%m-%dT%H:%M:%SZ")
+    ref = rows[0]["price_usd"]
+    for earlier in rows[: index + 1]:
+        if earlier["t"] > cutoff_t:
+            break
+        ref = earlier["price_usd"]
+
+    fields = {
+        "coin": "USDC",
+        "price": f"{price:.4f}",
+        "peg": f"{PEG:.4f}",
+        "dev_bps": str(round((price - PEG) * 10000)),
+    }
+    if ref > 0:
+        fields["chg24h_pct"] = f"{(price - ref) / ref * 100:.2f}"
+        fields["ref24h"] = f"{ref:.4f}"
+    fields["score"] = f"{float(event['risk_score']):.1f}"
+    if "redemption_volume_usd" in row:
+        fields["redemption_usd"] = _trim(row["redemption_volume_usd"], 2)
+    if "pool_imbalance_ratio" in row:
+        fields["pool"] = _trim(row["pool_imbalance_ratio"])
+    if "news_risk_flag" in row:
+        fields["news"] = str(int(row["news_risk_flag"]))
+    fields["at"] = row["t"]
+    fields["demo"] = "1"  # 장면 3은 항상 시연
+    return fields
+
+
+def _join_market(fields: dict[str, str]) -> str:
+    return MKT_MARKER + " ".join(f"{k}={v}" for k, v in fields.items())
+
+
+def market_line(rows: list[dict[str, Any]], index: int, event: dict[str, Any]) -> str:
+    """경보 description 끝에 붙이는 가격 정보 한 줄. ThreatWatch 승인 메일이 이 줄을 읽는다.
+
+    형식(백엔드 depeg_advisory.parse_market 과의 계약): " || MKT key=value key=value ..."
+    """
+    return _join_market(market_fields(rows, index, event))
+
+
 def build_alert(rows: list[dict[str, Any]], index: int, label: str) -> dict[str, Any]:
     """index 번째 행으로 엔진 → 어댑터를 거쳐 ThreatWatch 경보 본문을 만든다."""
     if not 0 <= index < len(rows):
@@ -127,7 +187,14 @@ def build_alert(rows: list[dict[str, Any]], index: int, label: str) -> dict[str,
         raise RowError(f"{index + 1}행 점수 {event['risk_score']}는 발송 기준 {THRESHOLD_SEND} 미만입니다")
     alert = to_alert_request(event)  # threshold_breached=False 이면 어댑터가 거부한다
     safe_label = re.sub(r"[^\w .\-]", "", label)[:60] or "upload"
-    alert["description"] = (
-        f"[DEMO SIMULATION · {safe_label} · {rows[index]['t']}] " + alert["description"]
-    )[:2000]
+    head = f"[DEMO SIMULATION · {safe_label} · {rows[index]['t']}] " + alert["description"]
+
+    # 전체 2000자 이하. 넘으면 MKT 의 선택 key 부터 빼고, 그래도 넘으면 앞부분(어댑터 설명)을 줄인다.
+    fields = market_fields(rows, index, event)
+    for key in MKT_DROP_ORDER:
+        if len(head) + len(_join_market(fields)) <= DESCRIPTION_MAX:
+            break
+        fields.pop(key, None)
+    tail = _join_market(fields)
+    alert["description"] = head[: DESCRIPTION_MAX - len(tail)] + tail
     return {"alert": alert, "event": event}
