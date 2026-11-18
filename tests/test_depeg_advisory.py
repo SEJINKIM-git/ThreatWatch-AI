@@ -84,7 +84,7 @@ def test_parse_ignores_unknown_keys():
 # ---- 등급 ----
 
 @pytest.mark.parametrize("bps,expected", [
-    (0, None), (49, None), (50, "주의"), (99, "주의"), (100, "경계"), (299, "경계"), (300, "심각"), (688, "심각"),
+    (0, None), (49, None), (50, "Watch"), (99, "Watch"), (100, "Warning"), (299, "Warning"), (300, "Severe"), (688, "Severe"),
 ])
 def test_grade_boundaries_both_signs(bps, expected):
     assert da.grade(bps) == expected
@@ -96,14 +96,15 @@ def test_grade_boundaries_both_signs(bps, expected):
 def test_severe_base_recommendations():
     investor, issuer = da.recommendations(_market(news=0, redemption_usd=0, pool=0))
     assert len(investor) == 3 and len(issuer) == 3
-    assert investor[0].startswith("신규 매수와 담보·결제 수단 사용을 잠시 멈추고")
-    assert issuer[0].startswith("1시간 안에 준비금 구성")
+    assert investor[0].startswith("Pause new purchases")
+    assert issuer[0].startswith("Within 1 hour, disclose the reserve composition")
 
 
 @pytest.mark.parametrize("bps,investor0,issuer0", [
-    (-60, "가격·공지 모니터링", "시장 상황 점검"),
-    (150, "신규 매수·담보 사용 보류 검토", "준비금 현황 공개 준비"),
-    (10, "가격·공지 모니터링", "시장 상황 점검"),  # 등급 없음 → 가장 낮은 문구
+    (-60, "Monitor the price and official announcements.", "Review market conditions."),
+    (150, "Consider pausing new purchases and use as collateral.",
+     "Prepare to disclose the current state of reserves."),
+    (10, "Monitor the price and official announcements.", "Review market conditions."),  # 등급 없음 → 가장 낮은 문구
 ])
 def test_lower_grade_recommendations(bps, investor0, issuer0):
     investor, issuer = da.recommendations(_market(dev_bps=bps, news=0, redemption_usd=0, pool=0))
@@ -128,7 +129,9 @@ def test_no_trade_instructions_in_any_recommendation():
     for bps in (60, 150, 688):
         investor, issuer = da.recommendations(_market(dev_bps=bps))
         for line in investor + issuer:
-            assert "매도하세요" not in line and "매수하세요" not in line and "파세요" not in line
+            lowered = line.lower()
+            assert line.isascii()
+            assert not lowered.startswith(("sell", "buy")) and "you should sell" not in lowered
 
 
 # ---- 승인 요청 메일 ----
@@ -138,18 +141,19 @@ def test_request_message_with_market():
     body = "\n".join(lines)
     assert subject == "[APPROVAL] USDC -6.9% depeg - advisory decision (a1b2c3d4)"
     assert subject.isascii() and len(subject) < 100 and "\n" not in subject
-    assert lines[0].startswith("[시연 · 모의 위기]")
+    assert lines[0].startswith("[DEMO · SIMULATED CRISIS]")
     for expected in (
-        "USDC (목표 1.0000 USD)", "0.9312 USD  (2026-11-26 15:00 UTC)", "-688bps (-6.88%)  → 등급: 심각",
-        "1.0000 → 0.9312 (-6.88%)", "93.7 / 100  (경보 70 · 사람 승인 85 초과)",
-        "시간당 16억 달러", "유동성 쏠림  0.86", "발행사·수탁은행 위기 기사 감지",
-        "■ 투자자 권고", "■ 발행사 권고", "투자 권유가 아닙니다",
-        "[승인] 위 권고안을 투자자·발행사에 발송합니다. (시연: 발송 확정만 기록)",
-        "[반려] 권고안을 보내지 않습니다. 오탐·데이터 오류로 기록하고 감시는 계속합니다.",
+        "USDC (target 1.0000 USD)", "0.9312 USD  (2026-11-26 15:00 UTC)", "-688bps (-6.88%)  -> Grade: Severe",
+        "1.0000 -> 0.9312 (-6.88%)", "93.7 / 100  (above alert 70 and human approval 85)",
+        "$1.6 billion per hour", "Pool imbalance      0.86", "Crisis coverage of the issuer or its custodian bank detected",
+        "== Advisory for investors ==", "== Advisory for the issuer ==", "It is not investment advice.",
+        "[APPROVE] Send the advisory above to investors and the issuer. (Demo: only the decision to send is recorded.)",
+        "[REJECT] Do not send the advisory. Record it as a false alarm or data error; monitoring continues.",
         f"{URL}?id=tok&decision=approve", f"{URL}?id=tok&decision=reject", f"Alert ID: {ALERT_ID}",
     ):
         assert expected in body, expected
     assert "containment" not in body.lower()
+    assert not any("가" <= ch <= "힣" for ch in body)  # 메일 본문은 영어
 
 
 def test_request_message_not_demo_and_optional_fields_absent():
@@ -157,8 +161,9 @@ def test_request_message_not_demo_and_optional_fields_absent():
     subject, lines = approval_request.build_message(case, "tok", URL)
     body = "\n".join(lines)
     assert subject == "[APPROVAL] USDT +0.6% depeg - advisory decision (a1b2c3d4)"
-    assert "시연" not in body and "판단 근거" not in body and "24시간 변화" not in body and "위험 점수" not in body
-    assert "+61bps (+0.61%)  → 등급: 주의" in body
+    assert "DEMO" not in body and "Demo" not in body and "Why this was flagged" not in body
+    assert "24h change" not in body and "Risk score" not in body
+    assert "+61bps (+0.61%)  -> Grade: Watch" in body
 
 
 def test_expiry_text_matches_state_machine_timeout(monkeypatch):
@@ -166,16 +171,17 @@ def test_expiry_text_matches_state_machine_timeout(monkeypatch):
     assert approval_request.APPROVAL_TTL_SEC == 7200  # 레코드 보관 시간은 그대로
     for incident_summary in (SUMMARY, "no market"):
         body = "\n".join(approval_request.build_message(_case(incident_summary), "tok", URL)[1])
-        assert "60분 뒤 만료" in body and "2시간" not in body
+        assert "expires in 60 minutes" in body and "2 hours" not in body
     monkeypatch.setattr(approval_request, "APPROVAL_TIMEOUT_SEC", 1800)
-    assert "30분 뒤 만료" in "\n".join(approval_request.build_message(_case(), "tok", URL)[1])
+    assert "expires in 30 minutes" in "\n".join(approval_request.build_message(_case(), "tok", URL)[1])
 
 
 def test_depeg_without_market_keeps_previous_wording():
     subject, lines = approval_request.build_message(_case("USDC depeg risk score 93.7"), "tok", URL)
     assert subject == "[APPROVAL] Depeg alert a1b2c3d4 - response decision required"
-    assert "스테이블코인 디페그 조기경보 — 대응 실행 여부를 결정해 주세요." in lines
-    assert "■ 가격 변동" not in lines
+    assert "Stablecoin depeg early warning — your decision is required." in lines
+    assert "== Price move ==" not in lines
+    assert not any("가" <= ch <= "힣" for ch in "\n".join(lines))
 
 
 def test_security_alert_ignores_market_block():
@@ -191,17 +197,18 @@ def test_result_mail_depeg():
     case = {"alert_id": ALERT_ID, "incident_type": DEPEG_TYPE}
     subject, lines = approval_finalize.build_result("approve", case)
     assert subject == "[APPROVED] USDC advisory - send approved (a1b2c3d4)"
-    assert lines[0] == "권고안 발송 승인 — 투자자·발행사 권고 발송 확정"
+    assert lines[0] == "Advisory approved — sending to investors and the issuer is confirmed."
     subject, lines = approval_finalize.build_result("reject", case)
     assert subject == "[REJECTED] USDC advisory - not sent (a1b2c3d4)"
-    assert lines[0] == "권고안 반려 — 발송 안 함, 오탐 기록·감시 유지"
+    assert lines[0] == "Advisory rejected — not sent; recorded as a false alarm, monitoring continues."
     subject, lines = approval_finalize.build_result("expired", case)
     assert subject == f"[EXPIRED] {ALERT_ID}"
-    assert any("권고안 미발송" in line for line in lines)
+    assert any("advisory not sent" in line for line in lines)
     for decision in ("approve", "reject", "expired"):
         subject, lines = approval_finalize.build_result(decision, case)
         assert subject.isascii() and len(subject) < 100
         assert "containment" not in "\n".join(lines).lower()
+        assert not any("가" <= ch <= "힣" for ch in "\n".join(lines))
         assert f"Alert ID : {ALERT_ID}" in lines
 
 
@@ -246,12 +253,12 @@ def _click(monkeypatch, incident_type, decision):
 
 def test_callback_page_depeg(monkeypatch):
     page = _click(monkeypatch, DEPEG_TYPE, "approve")
-    assert page["statusCode"] == 200 and "권고안 발송 승인" in page["body"]
+    assert page["statusCode"] == 200 and "Advisory approved" in page["body"]
     assert "<script>" not in page["body"]  # 저장된 값도 HTML 에 넣지 않는다
     page = _click(monkeypatch, DEPEG_TYPE, "reject")
-    assert "권고안 반려" in page["body"] and "<script>" not in page["body"]
+    assert "Advisory rejected" in page["body"] and "<script>" not in page["body"]
 
 
 def test_callback_page_security_unchanged(monkeypatch):
     page = _click(monkeypatch, "ransomware", "approve")
-    assert "Case approved" in page["body"] and "권고안" not in page["body"]
+    assert "Case approved" in page["body"] and "Advisory" not in page["body"]
