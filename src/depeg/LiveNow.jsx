@@ -6,27 +6,13 @@ import { LineChart, FactorBars, SERIES, INK } from "./charts.jsx";
  *
  * /api/depeg-live 가 오늘의 가격·뉴스·공시를 불러와 엔진으로 점수를 낸다.
  * 이 화면은 결과를 보여주기만 하고, 아무것도 발송하지 않는다.
+ * children 은 섹션 맨 아래(발표 대본 카드 자리)에 그린다.
  */
 
 const TIER = {
   A: { tone: "bad", ko: "발행사 위기", en: "Issuer distress" },
   B: { tone: "warn", ko: "보관처 위기", en: "Custodian distress" },
   C: { tone: "neutral", ko: "관찰", en: "Watch" },
-};
-
-const WHO = {
-  operator: { ko: "운영자", en: "Operator" },
-  approver: { ko: "승인자", en: "Approver" },
-  investor: { ko: "투자자·이해관계자", en: "Investors & stakeholders" },
-};
-
-const NOW_TEXT = {
-  push: { ko: "즉시 알림", en: "Notified now", tone: "warn" },
-  approval_request: { ko: "승인 요청", en: "Approval request", tone: "bad" },
-  heads_up: { ko: "사전 통지 (승인 요청 아님)", en: "Heads-up (no approval yet)", tone: "info" },
-  after_approval: { ko: "사람 승인 후에만 안내문", en: "Notice only after approval", tone: "info" },
-  dashboard_only: { ko: "대시보드 표시만", en: "Dashboard only", tone: "good" },
-  none: { ko: "보내지 않음", en: "Nothing sent", tone: "neutral" },
 };
 
 /** 외부 피드 URL은 http/https만 링크로 쓴다 (javascript: 등 차단) */
@@ -45,7 +31,7 @@ function gdeltTime(s) {
   return m ? `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00Z` : null;
 }
 
-export default function LiveNow({ L, lang, labelOf, fmtTime }) {
+export default function LiveNow({ L, lang, labelOf, fmtTime, children }) {
   const [state, setState] = useState({ status: "loading" });
 
   const load = useCallback(() => {
@@ -95,12 +81,14 @@ export default function LiveNow({ L, lang, labelOf, fmtTime }) {
       )}
 
       {state.status === "ok" && <LiveBody data={state.data} L={L} lang={lang} labelOf={labelOf} fmtTime={fmtTime} reload={load} />}
+      {/* 발표 대본 카드 — 실시간 데이터를 못 불러와도 대본은 보이도록 본문 밖에 둔다 */}
+      {children}
     </section>
   );
 }
 
 function LiveBody({ data, L, lang, labelOf, fmtTime, reload }) {
-  const { event, inputs, thresholds, verdict, recipients } = data;
+  const { event, inputs, thresholds, verdict } = data;
   const prices = inputs.prices_24h;
   const vals = prices.map((p) => p.price);
   const lo = Math.min(...vals, 0.999);
@@ -229,29 +217,6 @@ function LiveBody({ data, L, lang, labelOf, fmtTime, reload }) {
         </div>
       </div>
 
-      <div className="dp-panel-low" style={{ marginTop: 16 }}>
-        <div className="dp-row" style={{ flexWrap: "wrap" }}>
-          <p className="dp-h3">{L("지금 점수라면 누가 무엇을 받나", "Who would hear what at this score")}</p>
-          <span className="dp-chip neutral">{L("미리보기 · 발송 안 함", "Preview · nothing sent")}</span>
-        </div>
-        <div className="dp-recips">
-          {recipients.map((r) => {
-            const n = NOW_TEXT[r.now];
-            return (
-              <div key={r.who} className="dp-recip">
-                <p className="dp-label">{WHO[r.who][lang]}</p>
-                <span className={`dp-chip ${n.tone}`} style={{ justifySelf: "start" }}>{n[lang]}</span>
-              </div>
-            );
-          })}
-        </div>
-        <p className="dp-small" style={{ margin: "16px 0 0" }}>
-          {L(
-            "투자자·이해관계자 안내는 점수와 관계없이 사람이 승인한 뒤에만 나갑니다. AI는 판단하지 않고, 엔진이 정한 등급에 맞춰 안내 문장만 씁니다.",
-            "Investor and stakeholder notices only go out after a person approves, whatever the score. AI does not decide; it only drafts the wording for the level the engine set.",
-          )}
-        </p>
-      </div>
       <p className="dp-foot" style={{ marginTop: 14, paddingTop: 0 }}>
         {L("엔진", "Engine")} @{data.engine} · {L("가격", "Price")}: Bitstamp USDC/USD 1h · {L("뉴스", "News")}: {news.source} · {L("공시", "Filing")}: Circle {att.report} ({L("손 검증값", "hand-verified")})
       </p>

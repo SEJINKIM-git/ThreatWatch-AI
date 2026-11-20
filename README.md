@@ -12,7 +12,7 @@ LLM-powered security alert triage dashboard with a presentation-friendly scenari
 
 ### Depeg Early Warning (`/depeg`)
 
-Shows the stablecoin depeg early-warning system that sits on top of ThreatWatch (Phase A): headline numbers, today's live analysis, an hour-by-hour replay of the March 2023 USDC depeg, a simulated crisis with human approval, and the literal alert the adapter sends into ThreatWatch.
+Shows the stablecoin depeg early-warning system that sits on top of ThreatWatch (Phase A): headline numbers, today's live analysis, an hour-by-hour replay of the March 2023 USDC depeg, and a simulated crisis with human approval. Each scene is followed by a presenter script card (hide or show all three with the **S** key or the button on the card; the choice is remembered in the browser).
 
 The page computes nothing. Every number comes from `public/depeg/replay.json`, which `scripts/build_depeg_replay.py` produces by calling the real engine (`compute_risk_score`) and adapter (`to_alert_request`) in the `depeg-early-warning` repository. Regenerate it whenever the engine or data changes:
 
@@ -25,8 +25,10 @@ python scripts/build_depeg_replay.py --engine-repo ../depeg-early-warning --out 
 Scene 2 has three score lines: price only, + filings, and + news (`score_news`, from the engine's `data/historical/signals_usdc_2023_news_hourly.json`, news rubric version recorded in `summary.news`). The script imports the engine's weights and rubric and copies none of them, so **when the engine's weights or rubric change on `main`** (e.g. the reweighting):
 1. `scripts/sync_depeg_engine.sh ../depeg-early-warning` — refresh the live copies (engine, adapter, news rubric).
 2. `python scripts/build_depeg_replay.py --engine-repo ../depeg-early-warning --out public/depeg/replay.json` — regenerate the replay (engine checked out on `main`).
-3. `python -m pytest -q && node --test tests/tw-alerts.test.mjs && npx vite build` — the Scene 3 and live tests pin scores, so a reweighting shows up here first.
-4. Open `/depeg` and check the hero, the replay status card and the three insight cards still read correctly with the new numbers.
+3. `python -m pytest -q && node --test tests/*.test.mjs && npx vite build` — the Scene 3 and live tests pin scores, so a reweighting shows up here first.
+4. Open `/depeg` and check the hero, the replay status card and the presenter script still read correctly with the new numbers.
+
+**Presenter script (발표 대본 카드, S 키로 숨김).** The wording lives in one place, `SCRIPT` in `src/depeg/content.js` (`live`, `replay`, `closing`, each in KO and EN). `[Bracketed]` text is a stage direction and is styled differently; `{lead_hours}`, `{watch_ratio}`, `{cross_time}`, `{peak}`, `{price_peak}`, `{calm_max}` and `{calm_false}` are filled from `replay.json` by `scriptValues` / `fill`, so no number is typed into the script. An unknown or empty placeholder is shown as an error on the card instead of leaking `{…}`. Tests: `node --test tests/depeg-script.test.mjs`.
 
 Update order is always: engine `main` → sync → build → tests. The dashboard never edits the engine copies, weights, thresholds (70 / 85) or the 2023 data.
 
