@@ -6,7 +6,6 @@ import { LineChart, FactorBars, SERIES, INK } from "./charts.jsx";
  *
  * /api/depeg-live 가 오늘의 가격·뉴스·공시를 불러와 엔진으로 점수를 낸다.
  * 이 화면은 결과를 보여주기만 하고, 아무것도 발송하지 않는다.
- * children 은 섹션 맨 아래(발표 대본 카드 자리)에 그린다.
  */
 
 const TIER = {
@@ -31,7 +30,7 @@ function gdeltTime(s) {
   return m ? `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00Z` : null;
 }
 
-export default function LiveNow({ L, lang, labelOf, fmtTime, children }) {
+export default function LiveNow({ L, lang, labelOf, fmtTime }) {
   const [state, setState] = useState({ status: "loading" });
 
   const load = useCallback(() => {
@@ -81,8 +80,6 @@ export default function LiveNow({ L, lang, labelOf, fmtTime, children }) {
       )}
 
       {state.status === "ok" && <LiveBody data={state.data} L={L} lang={lang} labelOf={labelOf} fmtTime={fmtTime} reload={load} />}
-      {/* 발표 대본 카드 — 실시간 데이터를 못 불러와도 대본은 보이도록 본문 밖에 둔다 */}
-      {children}
     </section>
   );
 }

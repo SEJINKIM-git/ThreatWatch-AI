@@ -3,8 +3,6 @@ import "./depeg.css";
 import { LineChart, FactorBars, SERIES, INK } from "./charts.jsx";
 import LiveNow from "./LiveNow.jsx";
 import SimCrisis from "./SimCrisis.jsx";
-import ScriptCard from "./ScriptCard.jsx";
-import { scriptValues } from "./content.js";
 
 /**
  * /depeg — ThreatWatch 위에 얹은 디페그 조기경보 시스템 설명 화면
@@ -27,11 +25,6 @@ const METRIC = {
 };
 
 const LANG_KEY = "tw-depeg-lang";
-const SCRIPT_KEY = "tw-depeg-script";   // "hide" 일 때만 숨김. 읽지 못하면 보이기
-
-function readScriptVisible() {
-  try { return localStorage.getItem(SCRIPT_KEY) !== "hide"; } catch { return true; }
-}
 
 function readLang() {
   try { return localStorage.getItem(LANG_KEY) === "en" ? "en" : "ko"; } catch { return "ko"; }
@@ -56,26 +49,6 @@ export default function DepegPage() {
 
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
-
-  // 발표 대본: 세 카드가 함께 숨고 보인다
-  const [scriptOn, setScriptOn] = useState(readScriptVisible);
-  const toggleScript = () => setScriptOn((v) => !v);
-  useEffect(() => {
-    try { localStorage.setItem(SCRIPT_KEY, scriptOn ? "show" : "hide"); } catch { /* 저장 불가 환경 무시 */ }
-  }, [scriptOn]);
-  useEffect(() => {
-    // S 키로 전환. 입력칸(시연 키 등)에 포커스가 있거나 조합키와 함께면 무시한다.
-    // e.code 를 써서 한글 입력 상태(ㄴ)에서도 같은 자판 위치로 동작하게 한다.
-    function onKey(e) {
-      if (e.code !== "KeyS" || e.ctrlKey || e.metaKey || e.altKey || e.repeat || e.isComposing) return;
-      const el = e.target;
-      if (el instanceof HTMLElement
-          && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName))) return;
-      setScriptOn((v) => !v);
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
 
   useEffect(() => {
     fetch("/depeg/replay.json")
@@ -104,23 +77,14 @@ export default function DepegPage() {
     );
   }
 
-  // 대본의 {lead_hours} 같은 자리를 채울 값 — 전부 replay.json 에서 온다
-  const script = {
-    lang, visible: scriptOn, onToggle: toggleScript,
-    values: scriptValues(data, (t) => fmtTime(t, lang, true)),
-  };
-
   return (
     <div className="dp">
       <Header lang={lang} setLang={setLang} L={L} />
       <main className="dp-main">
         <Hero data={data} L={L} lang={lang} />
-        <LiveNow L={L} lang={lang} fmtTime={fmtTime} labelOf={(m) => METRIC[m]?.[lang] ?? m}>
-          <ScriptCard part="live" {...script} />
-        </LiveNow>
-        <Replay data={data} L={L} lang={lang} script={<ScriptCard part="replay" {...script} />} />
+        <LiveNow L={L} lang={lang} fmtTime={fmtTime} labelOf={(m) => METRIC[m]?.[lang] ?? m} />
+        <Replay data={data} L={L} lang={lang} />
         <SimCrisis L={L} lang={lang} fmtTime={fmtTime} labelOf={(m) => METRIC[m]?.[lang] ?? m} />
-        <ScriptCard part="closing" {...script} />
         <Footer data={data} L={L} />
       </main>
     </div>
@@ -202,7 +166,7 @@ function Kpi({ label, value, sub, tone }) {
 // 2023년 3월 리플레이
 // =============================================================
 
-function Replay({ data, L, lang, script }) {
+function Replay({ data, L, lang }) {
   const crisis = data.crisis;
   const times = crisis.map((p) => p.t);
   const lowIdx = times.indexOf(data.summary.low.t);
@@ -402,8 +366,6 @@ function Replay({ data, L, lang, script }) {
           </div>
         </aside>
       </div>
-
-      {script}
 
       <details className="dp-table-wrap">
         <summary>{L("표로 보기 (120시간)", "View as table (120 hours)")}</summary>
