@@ -200,17 +200,17 @@ export const OUTCOMES = [
 
 export const GAPS = [
   {
-    ko: "실제 데이터로는 경보가 울리지 않습니다",
-    en: "Real data never crosses the alert line",
-    dKo: "가격 항목의 가중치가 0.5라 가격만으로는 최대 50점입니다. 공시·뉴스를 더해도 기준 70점에 못 미칩니다(최고 점수는 위 리플레이). 계산 방식을 바꿀지, 데이터를 더 받을지 정해야 합니다.",
-    dEn: "Price carries a 0.5 weight, so price alone caps at 50. Adding filings and news still stays under 70 (peak shown in the replay above). Either the formula or the inputs must change.",
+    ko: "경보는 가격이 무너진 뒤에야 울립니다",
+    en: "The alert only fires once price breaks",
+    dKo: "가중치 v1에서 실제 데이터는 경보·사람 승인 기준을 모두 넘지만, 첫 돌파는 최저점 직전입니다(시각은 위 리플레이). 뉴스 하나만으로는 70점을 넘지 않게 설계했기 때문이며, 그 전 구간은 '관찰 단계'로 표시합니다.",
+    dEn: "With weights v1 real data crosses both lines, but only shortly before the low (hour shown in the replay above). By design, news alone cannot pass 70; the stretch before that is shown as the watch stage.",
     owner: { ko: "재석", en: "Jaeseok" },
   },
   {
-    ko: "뉴스가 리드타임을 늘렸지만 기준선은 넘지 못합니다",
-    en: "News lengthens the lead time but does not cross the line",
-    dKo: "뉴스 신호는 가격보다 훨씬 먼저 켜지지만, 점수 공식(뉴스 가중치 0.1)이 그대로라 기준선을 넘지 못합니다. 재석의 비중 재설계를 기다리는 중입니다. 평상시 뉴스 오탐 확인도 아직 남아 있습니다.",
-    dEn: "The news signal turns on long before price moves, but the formula (news weight 0.1) is unchanged, so the line is not reached. Waiting on Jaeseok's reweighting; the calm-period news false-alarm check is also still pending.",
+    ko: "뉴스는 돌파 시각을 앞당기지 못합니다",
+    en: "News does not move the crossing earlier",
+    dKo: "뉴스 신호는 가격보다 훨씬 먼저 켜지지만 점수를 관찰 단계까지만 올립니다. 뉴스가 한 일은 가격이 무너진 시각의 단계를 경보에서 사람 승인으로 올린 것입니다. 평상시 4주 화면 값은 아직 가격만 본 값입니다.",
+    dEn: "The news signal turns on long before price moves but only lifts the score into the watch stage. What news does is raise the stage at the hour price breaks from alert to human approval. The calm four-week figures on this page are still price-only.",
     owner: { ko: "재석 · 원준", en: "Jaeseok · Wonjun" },
   },
   {

@@ -14,7 +14,8 @@ export const SERIES = {
   // 세 번째 줄(가격+공시+뉴스). dataviz 검증기로 #0e1523 위에서 위 두 색과 전체 쌍 통과
   // (CVD ΔE 9.4, 정상 시각 20.9). 경보·승인 기준선(상태색)과는 점선·글자 라벨로 구분한다.
   scoreNews: "#d95926",
-  newsBand: "rgba(217, 89, 38, 0.10)",
+  // 관찰 단계(뉴스 신호 켜짐 + 경보 기준 미만) 배경 띠 — 경보색(노랑)을 아주 옅게. 70·85 점선과 겹쳐도 선이 읽힌다
+  watchBand: "rgba(245, 177, 61, 0.13)",
 };
 
 export const INK = {
@@ -45,12 +46,16 @@ export function useWidth(initial = 640) {
  * series: [{ key, label, color, values }]
  * refLines: [{ y, label, color }]
  * hoverIdx / onHover: 위아래 차트가 같은 시각을 가리키도록 부모가 상태를 가진다.
- * bands: [{ from, to, color, label }] — 인덱스 구간을 옅은 배경 띠로 (upto 이후는 그리지 않음)
+ * bands: [{ from, to, color, label, labelY }] — 인덱스 구간을 옅은 배경 띠로 (upto 이후는 그리지 않음).
+ *   label 은 첫 띠에만 붙는다. labelY(데이터 값)를 주면 그 높이에, 없으면 맨 위에 둔다
+ * vlines: [{ i, short, color }] — 특정 시각의 세로 점선. 차트 위 여백에 short(①, ② 등)만 달고,
+ *   긴 설명은 호출하는 쪽이 차트 아래 범례에 쓴다 (선·기준선 라벨과 겹치지 않게)
  * endLabels: true면 오른쪽 끝에 계열 이름을 직접 단다 (s.short || s.label, 겹치지 않게 밀어냄)
  */
 export function LineChart({
   series, times, yMin, yMax, yTicks, formatY, refLines = [], markers = [],
   height = 220, hoverIdx, onHover, ariaLabel, compact = false, upto, bands = [], endLabels = false,
+  vlines = [],
 }) {
   // upto: 재생 중일 때 여기까지만 선을 그린다 (x축 눈금은 전체 기간 그대로 — 화면이 늘어나지 않게)
   const shown = (vals) => (upto == null ? vals : vals.slice(0, upto + 1));
@@ -112,8 +117,9 @@ export function LineChart({
             <g key={`band-${b.from}`}>
               <rect x={cx0} y={pad.t} width={Math.max(0, Math.min(width - pad.r, x1) - cx0)} height={ih}
                     fill={b.color} />
-              {k === 0 && b.label && (
-                <text x={cx0 + 6} y={pad.t + 12} className="dp-axis">{b.label}</text>
+              {k === 0 && b.label && x1 - cx0 >= b.label.length * 7 + 12 && (
+                <text x={cx0 + 6} y={b.labelY != null ? y(b.labelY) : pad.t + 12} className="dp-axis"
+                      style={b.labelColor ? { fill: b.labelColor } : undefined}>{b.label}</text>
               )}
             </g>
           );
@@ -144,6 +150,18 @@ export function LineChart({
             <text x={width - pad.r} y={y(r.y) - 6} textAnchor="end"
                   className="dp-axis" style={{ fill: r.color }}>
               {r.label}
+            </text>
+          </g>
+        ))}
+
+        {/* 세로 표시 (특정 시각) — 라벨은 위쪽에 줄을 바꿔 가며 놓아 서로 겹치지 않게 한다 */}
+        {vlines.filter((v) => v.i >= 0 && (upto == null || v.i <= upto)).map((v) => (
+          <g key={`vl-${v.i}`} pointerEvents="none">
+            <line x1={x(v.i)} x2={x(v.i)} y1={pad.t} y2={pad.t + ih}
+                  stroke={v.color || INK.dim} strokeWidth="1.25" strokeDasharray="2 4" />
+            <text x={x(v.i)} y={pad.t - 3} textAnchor="middle" className="dp-axis"
+                  style={{ fill: v.color || INK.dim }}>
+              {v.short}
             </text>
           </g>
         ))}
@@ -203,7 +221,7 @@ export function LineChart({
 /** 점수 기여도 가로 막대 */
 export function FactorBars({ factors, labelOf }) {
   if (!factors?.length) return null;
-  const max = 0.5; // 가장 큰 가중치 — 막대 길이를 가중치 상한 기준으로 맞춘다
+  const max = 0.7; // 가장 큰 가중치(가격 이탈폭, 가중치 v1) — 막대 길이를 가중치 상한 기준으로 맞춘다
   return (
     <div style={{ display: "grid", gap: "10px" }}>
       {factors.map((f) => (

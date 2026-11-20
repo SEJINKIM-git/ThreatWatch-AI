@@ -73,11 +73,29 @@ def test_calm_day_scores_low_and_sends_nothing():
     assert out["engine"] != "unknown"
 
 
-def test_news_flag_adds_ten_points():
-    calm = analyze([candle(6, 1.0)], [], NOW)["event"]["risk_score"]
+def test_news_flag_adds_its_weight_and_stays_below_alert():
+    """가중치 v1: 뉴스 비중 0.14 → 뉴스 1건만 켜진 평상시는 +14점, 약 18~22점으로 70 미만 (팀 조건 3)."""
+    calm = analyze([candle(6, 1.0)], [], NOW)
     news = analyze([candle(6, 1.0)], [{"title": "USDC depeg fears as redemptions paused"}], NOW)
-    assert round(news["event"]["risk_score"] - calm, 1) == 10.0
+    assert round(news["event"]["risk_score"] - calm["event"]["risk_score"], 1) == 14.0
     assert news["inputs"]["news"]["flag"] == 1
+    assert 17 <= news["event"]["risk_score"] <= 23 and news["verdict"] == "ok"
+    assert all(r["now"] in ("dashboard_only", "none") for r in news["recipients"])
+
+
+def test_watch_stage_is_news_on_and_below_alert():
+    """관찰 단계 = 뉴스 신호 켜짐 AND 70 미만. 새 기준선이 아니라 표시다."""
+    article = [{"title": "USDC depeg fears as redemptions paused"}]
+    calm = analyze([candle(6, 1.0)], [], NOW)
+    assert calm["verdict"] == "ok" and calm["event"]["risk_score"] < 70 and calm["watch"] is None
+    news = analyze([candle(6, 1.0)], article, NOW)
+    assert news["watch"]["score_without_news"] == calm["event"]["risk_score"]
+    assert news["watch"]["ratio"] == round(news["event"]["risk_score"] / calm["event"]["risk_score"], 1)
+    # 가격까지 무너지면 경보 단계이므로 관찰 단계가 아니다
+    crash = analyze([candle(6, 0.93)], article, NOW)
+    assert crash["verdict"] == "high" and crash["watch"] is None
+    # 뉴스를 확인하지 못한 경우도 관찰 단계가 아니다 (확인 불가는 켜짐이 아님)
+    assert analyze([candle(6, 1.0)], article, NOW, news_error="timeout")["watch"] is None
 
 
 def test_google_news_rss_parsing():

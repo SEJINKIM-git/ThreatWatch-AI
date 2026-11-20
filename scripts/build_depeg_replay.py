@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import statistics
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -82,6 +83,22 @@ def hours_between(a: str | None, b: str) -> float | None:
     return round((parse_ts(b) - parse_ts(a)).total_seconds() / 3600, 1)
 
 
+def segments_where(points: list[dict], pred) -> list[dict]:
+    """pred(p) 가 참인 연속 구간들의 [{from, to}] (화면의 배경 띠)."""
+    out: list[dict] = []
+    open_ = False
+    for p in points:
+        if pred(p):
+            if open_:
+                out[-1]["to"] = p["t"]
+            else:
+                out.append({"from": p["t"], "to": p["t"]})
+            open_ = True
+        else:
+            open_ = False
+    return out
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--engine-repo", required=True, type=Path)
@@ -94,6 +111,7 @@ def main() -> None:
     from src.adapters.threatwatch_sender import to_alert_request  # noqa: E402
     from src.contracts import validate_signals  # noqa: E402
     from src.engine import risk_score as engine  # noqa: E402
+    from src.intelligence.build_news_signals import sensitivity_table  # noqa: E402
     from src.intelligence.news_rubric import RUBRIC_VERSION  # noqa: E402
     from src.intelligence.news_signal import hourly_axis, hourly_news_signals, lead_time_summary  # noqa: E402
 
@@ -135,6 +153,8 @@ def main() -> None:
             "factors": with_news["top_factors"],
             "confidence": with_news["confidence"],
             "breached": with_news["threshold_breached"],
+            # 관찰 단계: 뉴스 신호는 켜졌지만 점수는 아직 경보 기준 아래 (새 기준선이 아니라 표시)
+            "watch": bool(n and int(n["value"]) == 1 and with_news["risk_score"] < THRESHOLD_ALERT),
         })
     news_rubrics = sorted({s.get("meta", {}).get("rubric_version") for s in news.values()} - {None})
 
@@ -143,9 +163,11 @@ def main() -> None:
     calm_by = {(s["observed_at"], s["metric"]): s for s in calm}
     calm_series = []
     for t, m in hourly_points(calm).items():
-        ev = score([calm_by[(t, "price_usd")], calm_by[(t, "peg_deviation_bps")]])
+        onchain = [calm_by[(t, "price_usd")], calm_by[(t, "peg_deviation_bps")]]
+        ev = score(onchain)
+        full = score(onchain + offchain_signals_at(t))  # 그 시각에 공개돼 있던 공시만 (없으면 가격만)
         calm_series.append({"t": t, "price": m["price_usd"], "bps": m["peg_deviation_bps"],
-                            "score_price": ev["risk_score"]})
+                            "score_price": ev["risk_score"], "score_full": full["risk_score"]})
 
     # --- mock 위기 시나리오: 모든 지표가 있을 때 경보가 어떻게 나가는지 ---
     mock_signals = load("data/mock/signals_usdc_crisis.json")
@@ -170,16 +192,48 @@ def main() -> None:
     scan_from = "2023-03-06T01:00:00Z"  # src/intelligence/build_news_signals.py SCAN_FROM 과 같은 값
     lead = lead_time_summary(
         hourly_news_signals("USDC", hourly_axis(scan_from, crisis[-1]["t"]), articles), depeg)
-    news_on_segments = []
-    for p in crisis:  # 화면의 옅은 배경 띠
-        if p["news"] == 1 and (not news_on_segments or news_on_segments[-1]["_open"] is False):
-            news_on_segments.append({"from": p["t"], "to": p["t"], "_open": True})
-        elif p["news"] == 1:
-            news_on_segments[-1]["to"] = p["t"]
-        elif news_on_segments:
-            news_on_segments[-1]["_open"] = False
-    for seg in news_on_segments:
-        seg.pop("_open")
+    news_on_segments = segments_where(crisis, lambda p: p["news"] == 1)
+
+    # 대표 리드타임 = Silvergate 기사 제외 연속 구간 (엔진 docs/news_leadtime_2023.md 9-2절).
+    # 엔진의 민감도 표를 그대로 쓴다 — 여기서 다시 계산하지 않는다.
+    sens = sensitivity_table(articles, depeg, sorted({s["observed_at"] for s in depeg}))
+
+    def lead_of(variant: str, basis: str) -> dict:
+        v = sens[variant]
+        return {
+            "streak_start": v["streak_start"],
+            "hours_before_low": v.get("streak_lead_before_low_hours"),
+            "hours_before_minus_50bps": v["streak_lead_before_breach_hours"],
+            "basis": basis,
+        }
+
+    lead_conservative = lead_of("without_silvergate", "Silvergate 기사 제외")
+    lead_reference = lead_of("all", "전체 기사 (Silvergate 포함, 참고치)")
+
+    # 관찰 단계 요약 — "뉴스 신호 켜짐 AND 가격+공시+뉴스 점수 < 70" 인 시각들
+    watch_points = [p for p in crisis if p["watch"]]
+    watch_scores = [p["score_news"] for p in watch_points]
+    calm_median = statistics.median(p["score_full"] for p in calm_series)
+    # 화면의 "평소의 ○배"는 같은 입력끼리 비교한다: 관찰 구간의 같은 시각을 뉴스 없이 계산한 점수(score_full).
+    # 평시 4주(1~2월)는 2023-01 보고서 발행 전이라 공시 항목이 없어, calm_median 과 바로 나누면
+    # "공시 포함 점수 ÷ 공시 없는 점수"가 되어 배수가 부풀려진다. 그 값(ratio_vs_calm)도 기록은 남긴다.
+    baseline_median = statistics.median(p["score_full"] for p in watch_points) if watch_points else None
+    watch = {
+        "definition": "news_risk_flag = 1 AND score_news < alert threshold",
+        "segments": segments_where(crisis, lambda p: p["watch"]),
+        "first_at": watch_points[0]["t"] if watch_points else None,
+        "hours": len(watch_points),
+        "score_range": [min(watch_scores), max(watch_scores)] if watch_scores else None,
+        "score_median": statistics.median(watch_scores) if watch_scores else None,
+        "baseline_median": baseline_median,
+        "baseline_basis": "같은 시각, 뉴스 신호 없이 계산한 점수(가격+공시)의 중앙값",
+        "ratio_vs_baseline": (round(statistics.median(watch_scores) / baseline_median, 1)
+                              if baseline_median else None),
+        "calm_median": calm_median,
+        "calm_basis": "평시 4주 score_full 중앙값 (2023-01 보고서 발행 전이라 가격만)",
+        "ratio_vs_calm": (round(statistics.median(watch_scores) / calm_median, 1)
+                          if watch_scores and calm_median > 0 else None),
+    }
 
     commit = subprocess.run(["git", "-C", str(repo), "rev-parse", "--short", "HEAD"],
                             capture_output=True, text=True).stdout.strip()
@@ -214,10 +268,15 @@ def main() -> None:
                 "streak_start": lead["streak_start"],
                 "streak_hours_before_low": hours_between(lead["streak_start"], low["t"]),
                 "streak_hours_before_minus_50bps": lead["streak_lead_before_breach_hours"],
+                # 화면이 대표로 쓰는 값은 lead_conservative 하나. lead_reference 는 참고치.
+                "lead_conservative": lead_conservative,
+                "lead_reference": lead_reference,
                 "calm": None,  # 평상시 4주 뉴스 파일 없음 — 화면에 "평상시 뉴스는 아직 미반영"
             },
+            "watch": watch,
             "calm_max_abs_bps": max(abs(p["bps"]) for p in calm_series),
             "calm_max_score": max(p["score_price"] for p in calm_series),
+            "calm_max_score_full": max(p["score_full"] for p in calm_series),
             "calm_hours_breached": sum(p["score_price"] >= THRESHOLD_ALERT for p in calm_series),
         },
         "mock": {

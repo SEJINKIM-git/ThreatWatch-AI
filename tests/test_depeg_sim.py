@@ -28,7 +28,9 @@ def test_template_spikes_once_and_sends_at_peak_hour():
     assert max(calm) < 20  # 평온 구간
     i = first_send_index(scores)
     assert i == 39 and scores[i]["score"] >= 85  # 2026-11-26T15:00Z 급증 (39시간째)
-    assert scores[37]["score"] < 70  # 2시간 전에는 아직 기준선 아래 → '갑자기'
+    # 가중치 v1 점수: 14:00 은 66.1(경보 전), 15:00 에 95.6 으로 70·85 를 한 번에 넘는다 → '갑자기'
+    assert round(scores[38]["score"], 1) == 66.1 and round(scores[39]["score"], 1) == 95.6
+    assert scores[37]["score"] < 70
     assert "news_risk_flag" in cols
 
 
@@ -128,7 +130,8 @@ def test_signature_matches_threatwatch_rule(monkeypatch):
 
 def test_rehearsal_file_crosses_lines_at_known_hours():
     """리허설용 24시간 파일 (public/depeg/sim-rehearsal.csv) — 시각마다 무엇이 일어나는지 고정한다.
-    06Z 뉴스 신호 → 12Z 경보 기준 70 → 13Z 사람 승인 기준 85(여기서 1건 발송) → 14Z 최저점 → 회복."""
+    06Z 뉴스 신호 → 12Z 경보 기준 70 → 13Z 사람 승인 기준 85(여기서 1건 발송) → 14Z 최저점 → 회복.
+    가중치 v1 에서도 70과 85를 서로 다른 시각에 넘도록 12Z 가격을 0.9660 으로 맞춰 두었다."""
     with open(os.path.join(ROOT, "public", "depeg", "sim-rehearsal.csv"), encoding="utf-8") as f:
         rows, cols = validate_rows(list(csv.DictReader(f)))
     scores = score_rows(rows)
@@ -136,7 +139,7 @@ def test_rehearsal_file_crosses_lines_at_known_hours():
     assert max(s["score"] for s in scores[:6]) < 10  # 평상시
     assert scores[6]["score"] - scores[5]["score"] >= 10 and scores[6]["bps"] > -5  # 뉴스가 가격보다 먼저
     first70 = next(i for i, s in enumerate(scores) if s["score"] >= 70)
-    assert first70 == 12
+    assert first70 == 12 and 70 <= scores[12]["score"] < 85 and scores[11]["score"] < 70
     assert first_send_index(scores) == 13 and scores[13]["t"] == "2026-11-25T13:00:00Z"
     assert min(range(24), key=lambda i: scores[i]["bps"]) == 14
     assert scores[-1]["score"] < 10  # 회복
@@ -160,7 +163,7 @@ def test_market_line_for_template_spike_row():
     m = _mkt(line)
     # 24시간 전(2026-11-25T15:00Z) 행의 가격은 1.0001 이다
     assert m["ref24h"] == "1.0001" and m["chg24h_pct"] == "-6.89"
-    assert m["score"] == f"{built['event']['risk_score']:.1f}"
+    assert m["score"] == f"{built['event']['risk_score']:.1f}" == "95.6"
     assert m["redemption_usd"] == "1600000000" and m["pool"] == "0.86" and m["news"] == "1"
     assert m["at"] == "2026-11-26T15:00:00Z" and m["demo"] == "1"
     d = built["alert"]["description"]
@@ -174,6 +177,8 @@ def test_market_line_uses_first_row_when_no_row_is_24h_old():
     built = build_alert(rows, 13, "sim-rehearsal.csv")
     m = _mkt(built["alert"]["description"])
     first, now = rows[0]["price_usd"], rows[13]["price_usd"]
+    assert m["price"] == "0.9550" and m["dev_bps"] == "-450" and m["chg24h_pct"] == "-4.50"
+    assert m["score"] == "88.5"
     assert m["ref24h"] == f"{first:.4f}"
     assert m["chg24h_pct"] == f"{(now - first) / first * 100:.2f}"
     assert int(m["dev_bps"]) == round((now - 1) * 10000) and int(m["dev_bps"]) < 0

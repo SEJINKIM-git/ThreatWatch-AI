@@ -125,6 +125,17 @@ function Header({ lang, setLang, L }) {
 
 function Hero({ data, L, lang }) {
   const s = data.summary;
+  const thr = data.thresholds;
+  const line = s.lines.score_news;
+  const peak = s.crisis_max_score_news;
+  // 실데이터 최고 점수가 기준선을 넘었는지에 따라 문구가 달라진다 (숫자는 전부 replay.json)
+  const peakSub = peak >= thr.approval
+    ? L(`경보 ${thr.alert}·사람 승인 ${thr.approval} 모두 넘음 — 최저점 ${line.approval.hours_before_low}시간 전`,
+        `Crossed alert ${thr.alert} and approval ${thr.approval} — ${line.approval.hours_before_low} h before the low`)
+    : peak >= thr.alert
+      ? L(`경보 ${thr.alert} 넘음(최저점 ${line.alert.hours_before_low}시간 전) · 사람 승인 ${thr.approval}에는 미달`,
+          `Crossed alert ${thr.alert} (${line.alert.hours_before_low} h before the low) · below approval ${thr.approval}`)
+      : L(`경보 기준 ${thr.alert} 미달 — 아래에서 이유 설명`, `Below the alert line ${thr.alert} — see why below`);
   return (
     <section className="dp-hero dp-hero--kpis">
       <div className="dp-kpis">
@@ -133,9 +144,9 @@ function Hero({ data, L, lang }) {
         <Kpi label={L("최대 이탈폭", "Max deviation")} value={fmtBps(s.low.bps)}
              sub={L("1달러 대비 −13.7%", "−13.7% from $1")} />
         <Kpi label={L("실데이터 최고 점수 (뉴스 포함)", "Peak score, real data (with news)")}
-             value={<>{s.crisis_max_score_news}<span style={{ fontSize: 15, color: "var(--faint)" }}> / {data.thresholds.alert}</span></>}
-             sub={L("경보 기준 미달 — 아래에서 이유 설명", "Below the alert line — see why below")}
-             tone="warn" />
+             value={<>{peak}<span style={{ fontSize: 15, color: "var(--faint)" }}> / 100</span></>}
+             sub={peakSub}
+             tone={peak >= thr.approval ? "bad" : "warn"} />
         <Kpi label={L("평상시 4주 최고 점수", "Peak score, calm 4 weeks")} value={s.calm_max_score}
              sub={L(`잘못 울린 경보 ${s.calm_hours_breached}회`, `${s.calm_hours_breached} false alarms`)} />
       </div>
@@ -147,7 +158,7 @@ function Kpi({ label, value, sub, tone }) {
   return (
     <div className="dp-kpi">
       <p className="dp-label">{label}</p>
-      <p className="dp-kpi-v" style={tone === "warn" ? { color: "var(--warn)" } : undefined}>{value}</p>
+      <p className="dp-kpi-v" style={tone ? { color: `var(--${tone})` } : undefined}>{value}</p>
       <p className="dp-kpi-s">{sub}</p>
     </div>
   );
@@ -161,13 +172,17 @@ function Replay({ data, L, lang }) {
   const crisis = data.crisis;
   const times = crisis.map((p) => p.t);
   const lowIdx = times.indexOf(data.summary.low.t);
-  const firstIdx = times.indexOf(data.summary.first_minus_50bps);
   const peakIdx = crisis.reduce((best, d, i) => (d.score_news > crisis[best].score_news ? i : best), 0);
   const news = data.summary.news;
-  const newsBands = useMemo(() => news.on_segments.map((g) => ({
-    from: times.indexOf(g.from), to: times.indexOf(g.to), color: SERIES.newsBand,
-    label: L("뉴스 신호 켜짐", "News signal on"),
-  })), [news, times, lang]); // eslint-disable-line react-hooks/exhaustive-deps
+  const watch = data.summary.watch;
+  const lead = news.lead_conservative;       // 대표 리드타임 (Silvergate 기사 제외)
+  const line = data.summary.lines.score_news;
+  const linePrice = data.summary.lines.score_price;
+  // 관찰 단계: 뉴스 신호는 켜졌지만 점수는 경보 기준 아래인 시간대 (기존 "뉴스 신호 켜진 시간" 띠를 대체)
+  const watchBands = useMemo(() => watch.segments.map((g) => ({
+    from: times.indexOf(g.from), to: times.indexOf(g.to), color: SERIES.watchBand,
+    label: L("관찰 단계 · 뉴스 위험 신호", "Watch stage · news risk signal"), labelY: 52, labelColor: INK.warn,
+  })), [watch, times, lang]); // eslint-disable-line react-hooks/exhaustive-deps
   const [idx, setIdx] = useState(lowIdx >= 0 ? lowIdx : 0);
   const [playing, setPlaying] = useState(false);
 
@@ -184,9 +199,30 @@ function Replay({ data, L, lang }) {
 
   const p = crisis[idx];
   const thr = data.thresholds;
-  const verdict = p.score_news >= thr.approval ? "high" : p.score_news >= thr.alert ? "alert" : "ok";
-  const hoursBefore = lowIdx - firstIdx;
-  const newsHoursBefore = news.streak_hours_before_low;
+  const verdict = p.score_news >= thr.approval ? "high" : p.score_news >= thr.alert ? "alert" : p.watch ? "watch" : "ok";
+  const afterFirstAlert = line.alert.first_at != null && p.t > line.alert.first_at;
+  const sameHour = line.alert.first_at != null && line.alert.first_at === line.approval.first_at;
+  const at = (t) => fmtTime(t, lang).split(" · ")[0];
+
+  // 세로 표시 2개: 대표 뉴스 신호 시작, 기준선 첫 돌파
+  const vlines = [];
+  if (lead?.streak_start) {
+    vlines.push({
+      i: times.indexOf(lead.streak_start), color: INK.warn, short: "①",
+      label: L(`① Silvergate 제외 신호 시작 (최저점 ${lead.hours_before_low}시간 전)`,
+               `① Signal start excl. Silvergate (${lead.hours_before_low} h before low)`),
+    });
+  }
+  if (line.alert.first_at) {
+    vlines.push({
+      i: times.indexOf(line.alert.first_at), color: INK.bad, short: "②",
+      label: sameHour
+        ? L(`② ${thr.alert}·${thr.approval} 동시 돌파 (최저점 ${line.alert.hours_before_low}시간 전)`,
+            `② Crossed ${thr.alert} and ${thr.approval} together (${line.alert.hours_before_low} h before low)`)
+        : L(`② ${thr.alert} 돌파 (최저점 ${line.alert.hours_before_low}시간 전)`,
+            `② Crossed ${thr.alert} (${line.alert.hours_before_low} h before low)`),
+    });
+  }
 
   const priceSeries = useMemo(() => [{
     key: "price", label: L("USDC 가격", "USDC price"), color: SERIES.price, values: crisis.map((d) => d.price),
@@ -234,7 +270,7 @@ function Replay({ data, L, lang }) {
             <span><i style={{ background: SERIES.scorePrice }} />{L("가격만", "Price only")}</span>
             <span><i style={{ background: SERIES.scoreFull }} />{L("가격 + 공시", "Price + filings")}</span>
             <span><i style={{ background: SERIES.scoreNews }} />{L("가격 + 공시 + 뉴스", "Price + filings + news")}</span>
-            <span><i style={{ background: SERIES.newsBand, outline: `1px solid ${SERIES.scoreNews}` }} />{L("뉴스 신호 켜진 시간", "News signal on")}</span>
+            <span><i className="band" style={{ background: SERIES.watchBand, outline: `1px solid ${INK.warn}` }} />{L(`관찰 단계 (뉴스 신호 켜짐 · ${thr.alert}점 미만)`, `Watch stage (news on · below ${thr.alert})`)}</span>
             <span style={{ color: INK.warn }}><i className="dash" />{L("경보 기준", "Alert line")}</span>
             <span style={{ color: INK.bad }}><i className="dash" />{L("사람 승인 기준", "Approval line")}</span>
           </div>
@@ -245,10 +281,22 @@ function Replay({ data, L, lang }) {
             markers={[
               { i: peakIdx, v: crisis[peakIdx].score_news, label: L(`최고 ${crisis[peakIdx].score_news}점`, `Peak ${crisis[peakIdx].score_news}`), color: SERIES.scoreNews, dy: -10, anchor: "end" },
             ]}
-            bands={newsBands} endLabels
+            bands={watchBands} vlines={vlines} endLabels
             hoverIdx={idx} onHover={setIdx} height={230}
             ariaLabel={L("시간별 위험 점수와 경보 기준선", "Hourly risk score with alert thresholds")}
           />
+
+          <div className="dp-legend" style={{ margin: "10px 0 0" }}>
+            {vlines.map((v) => (
+              <span key={v.i} style={{ color: v.color }}><i className="vdash" />{v.label}</span>
+            ))}
+          </div>
+          {lead?.streak_start && watch.first_at && watch.first_at < lead.streak_start && (
+            <p className="dp-small" style={{ margin: "8px 0 0" }}>
+              {L(`① 이전의 음영은 Silvergate 기사로 켜진 구간입니다. Circle은 3/4에 Silvergate에서 자금을 뺐다고 밝혔으므로 참고치로만 봅니다 (포함하면 최저점 ${news.lead_reference.hours_before_low}시간 전).`,
+                 `Shading before ① comes from Silvergate articles. Circle said on Mar 4 it had moved its funds out of Silvergate, so that stretch is reference only (${news.lead_reference.hours_before_low} h before the low if included).`)}
+            </p>
+          )}
 
           <div className="dp-scrub">
             <button type="button" className="dp-secondary"
@@ -299,12 +347,25 @@ function Replay({ data, L, lang }) {
             <div className={`dp-verdict ${verdict}`} style={{ marginTop: 12 }}>
               {verdict === "ok" && (<>
                 <strong>{L(`경보 없음 — ${thr.alert}점 미만`, `No alert — below ${thr.alert}`)}</strong>
-                {p.score_price >= 50
-                  ? L("가격은 이미 크게 무너졌지만 가격 항목의 최대 기여가 50점이라 기준선에 닿지 못합니다.", "Price has collapsed, but the price factor maxes out at 50, so the line is never reached.")
-                  : L("정상 범위입니다.", "Within the normal range.")}
+                {L("뉴스 신호도 꺼져 있습니다. 정상 범위입니다.", "The news signal is off too. Within the normal range.")}
               </>)}
-              {verdict === "alert" && <strong>{L("경보 발생 → ThreatWatch P2", "Alert → ThreatWatch P2")}</strong>}
-              {verdict === "high" && <strong>{L("높음 → ThreatWatch P1, 사람 승인", "High → ThreatWatch P1, human approval")}</strong>}
+              {verdict === "watch" && (<>
+                <strong>{afterFirstAlert
+                  ? L(`관찰 단계 — 경보 기준(${thr.alert}) 아래로 내려옴`, `Watch stage — back below the alert line (${thr.alert})`)
+                  : L("관찰 단계 — 경보 전", "Watch stage — before any alert")}</strong>
+                {watch.baseline_median > 0
+                  ? L(`점수가 평소의 ${(p.score_news / watch.baseline_median).toFixed(1)}배, 뉴스 위험 신호 켜짐. 경보는 나가지 않고 운영자가 지켜보는 단계입니다.`,
+                      `Score is ${(p.score_news / watch.baseline_median).toFixed(1)}× its usual level with the news risk signal on. No alert goes out; operators watch.`)
+                  : L("뉴스 위험 신호 켜짐. 경보는 나가지 않고 운영자가 지켜보는 단계입니다.", "News risk signal on. No alert goes out; operators watch.")}
+              </>)}
+              {verdict === "alert" && (<>
+                <strong>{L("경보 발생 → ThreatWatch P2", "Alert → ThreatWatch P2")}</strong>
+                {L(`${thr.alert}점 이상 ${thr.approval}점 미만 — 운영자에게 알립니다.`, `At or above ${thr.alert}, below ${thr.approval} — operators are notified.`)}
+              </>)}
+              {verdict === "high" && (<>
+                <strong>{L("사람 승인 단계 → ThreatWatch P1", "Human approval stage → ThreatWatch P1")}</strong>
+                {L(`${thr.approval}점 이상 — 승인자가 결정할 때까지 기다립니다.`, `At or above ${thr.approval} — waits for an approver's decision.`)}
+              </>)}
             </div>
           </div>
         </aside>
@@ -312,24 +373,42 @@ function Replay({ data, L, lang }) {
 
       <div className="dp-insights">
         <div className="dp-insight">
-          <p className="dp-label">{L("가격만 볼 때 한계", "Price-only lead time")}</p>
+          <p className="dp-label">{L("관찰 단계 — 뉴스가 먼저 켜졌다", "Watch stage — news came first")}</p>
           <p className="dp-num" style={{ margin: "10px 0 6px" }}>
-            {L(`가격만 최대 ${hoursBefore}시간 전 → 뉴스 포함 ${newsHoursBefore}시간 전`, `Price only ≤ ${hoursBefore} h → with news ${newsHoursBefore} h`)}
+            {L(`최저점 ${lead.hours_before_low}시간 전부터 · 평소의 ${watch.ratio_vs_baseline}배`,
+               `From ${lead.hours_before_low} h before the low · ${watch.ratio_vs_baseline}× usual`)}
           </p>
           <p className="dp-small" style={{ margin: 0 }}>
             {L(
-              `가격은 처음 −50bps를 넘은 ${fmtTime(data.summary.first_minus_50bps, lang).split(" · ")[0]}부터, 뉴스는 끊기지 않고 켜진 ${fmtTime(news.streak_start, lang).split(" · ")[0]}부터 최저점까지. 뉴스 기준표 ${news.rubric_version} · 기사 표 승인 전이라 잠정값입니다.`,
-              `Price: from the first −50 bps hour to the low. News: from the start of its unbroken run (${fmtTime(news.streak_start, lang).split(" · ")[0]}). Rubric ${news.rubric_version} · provisional until the article table is approved.`,
+              `뉴스 신호는 최저점 ${lead.hours_before_low}시간 전(${at(lead.streak_start)})부터 켜져 점수가 평소의 ${watch.ratio_vs_baseline}배인 관찰 단계에 있었습니다. 관찰 단계는 경보가 아닙니다 — 뉴스 하나만으로는 ${thr.alert}점을 넘지 않도록 설계했기 때문입니다. '평소'는 같은 시각을 뉴스 신호 없이 계산한 점수(중앙값 ${watch.baseline_median}점)이고, 관찰 구간 점수의 중앙값은 ${watch.score_median}점입니다. ${lead.basis} 기준 · 뉴스 기준표 ${news.rubric_version}.`,
+              `The news signal was on from ${lead.hours_before_low} h before the low (${at(lead.streak_start)}), holding the score at ${watch.ratio_vs_baseline}× its usual level — the watch stage. A watch stage is not an alert: by design, news alone cannot push the score past ${thr.alert}. "Usual" is the same hours scored without the news signal (median ${watch.baseline_median}); the watch-stage median is ${watch.score_median}. Silvergate articles excluded · rubric ${news.rubric_version}.`,
             )}
           </p>
         </div>
         <div className="dp-insight">
-          <p className="dp-label">{L("기준선과의 거리", "Gap to the alert line")}</p>
+          <p className="dp-label">{L("기준선 돌파", "Crossing the lines")}</p>
           <p className="dp-num" style={{ margin: "10px 0 6px" }}>
-            {L(`현재 최고 ${data.summary.crisis_max_score_news}점 / 기준 ${thr.alert}`, `Peak ${data.summary.crisis_max_score_news} / line ${thr.alert}`)}
+            {line.alert.first_at
+              ? L(`최고 ${data.summary.crisis_max_score_news}점 · 최저점 ${line.alert.hours_before_low}시간 전 돌파`,
+                  `Peak ${data.summary.crisis_max_score_news} · crossed ${line.alert.hours_before_low} h before the low`)
+              : L(`최고 ${data.summary.crisis_max_score_news}점 / 기준 ${thr.alert}`, `Peak ${data.summary.crisis_max_score_news} / line ${thr.alert}`)}
           </p>
           <p className="dp-small" style={{ margin: 0 }}>
-            {L("뉴스가 리드타임은 늘렸지만 점수 공식이 그대로라 기준선을 넘지 못합니다. 재석의 비중 재설계를 기다리는 중입니다.", "News lengthens the lead time, but the formula is unchanged, so the line is still not reached. Waiting on Jaeseok's reweighting.")}
+            {!line.alert.first_at
+              ? L(`실제 데이터로는 경보 기준 ${thr.alert}점을 넘지 못했습니다.`, `Real data never reached the alert line (${thr.alert}).`)
+              : sameHour
+                ? L(
+                  `가격이 무너진 ${at(line.alert.first_at)}(최저점 ${line.alert.hours_before_low}시간 전)에 경보(${thr.alert})와 사람 승인(${thr.approval}) 기준을 동시에 넘었습니다. ${linePrice.alert.first_at === line.alert.first_at && !linePrice.approval.first_at
+                    ? `가격만 봤다면 같은 시각 경보(${thr.alert})까지만 가고 사람 승인(${thr.approval})에는 닿지 못했습니다(최고 ${linePrice.max}점).`
+                    : ""} 뉴스는 돌파 시각을 앞당긴 것이 아니라, 같은 시각의 단계를 경보에서 사람 승인으로 올렸습니다.`,
+                  `When price broke at ${at(line.alert.first_at)} (${line.alert.hours_before_low} h before the low), the score crossed the alert (${thr.alert}) and human-approval (${thr.approval}) lines in the same hour. ${linePrice.alert.first_at === line.alert.first_at && !linePrice.approval.first_at
+                    ? `On price alone it would have reached only the alert line (${thr.alert}) at that hour and never the approval line (${thr.approval}); its peak is ${linePrice.max}.`
+                    : ""} News did not move the crossing earlier; it raised that hour's stage from alert to human approval.`,
+                )
+                : L(
+                  `${at(line.alert.first_at)}(최저점 ${line.alert.hours_before_low}시간 전)에 경보 기준 ${thr.alert}점을 넘었습니다.${line.approval.first_at ? ` 사람 승인 기준 ${thr.approval}점은 ${at(line.approval.first_at)}에 넘었습니다.` : ` 사람 승인 기준 ${thr.approval}점에는 닿지 못했습니다.`}`,
+                  `Crossed the alert line (${thr.alert}) at ${at(line.alert.first_at)}, ${line.alert.hours_before_low} h before the low.${line.approval.first_at ? ` Crossed the approval line (${thr.approval}) at ${at(line.approval.first_at)}.` : ` Never reached the approval line (${thr.approval}).`}`,
+                )}
           </p>
         </div>
         <div className="dp-insight">
@@ -357,7 +436,7 @@ function Replay({ data, L, lang }) {
             <thead><tr>
               <th>{L("시각", "Hour")}</th><th>{L("가격", "Price")}</th><th>bps</th>
               <th>{L("점수(가격만)", "Score (price)")}</th><th>{L("점수(+공시)", "Score (+filings)")}</th>
-              <th>{L("뉴스", "News")}</th><th>{L("점수(+뉴스)", "Score (+news)")}</th>
+              <th>{L("뉴스", "News")}</th><th>{L("점수(+뉴스)", "Score (+news)")}</th><th>{L("단계", "Stage")}</th>
             </tr></thead>
             <tbody>
               {crisis.map((r) => (
@@ -366,6 +445,7 @@ function Replay({ data, L, lang }) {
                   <td>{r.price.toFixed(4)}</td><td>{r.bps}</td>
                   <td>{r.score_price}</td><td>{r.score_full}</td>
                   <td>{r.news === 1 ? L("켜짐", "on") : r.news === 0 ? L("꺼짐", "off") : "—"}</td><td>{r.score_news}</td>
+                  <td>{r.score_news >= thr.approval ? L("사람 승인", "Approval") : r.score_news >= thr.alert ? L("경보", "Alert") : r.watch ? L("관찰", "Watch") : "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -479,7 +559,7 @@ function Footer({ data, L }) {
     <footer className="dp-foot">
       {L("데이터", "Data")}: Bitstamp USDC/USD 1h OHLC (2023-01-15 ~ 02-12, 2023-03-09 ~ 03-14) ·
       Circle USDC {data.attestation.report} {L("준비금 보고서", "reserve report")} ({L("발행", "published")} {data.attestation.published_at.slice(0, 10)}, {L("손 검증값", "hand-verified")})<br />
-      {L("엔진", "Engine")}: depeg-early-warning @{data.engine_commit} · {L("뉴스 기준표", "news rubric")} {data.news_rubric_version} · {L("임시 공식(베이스라인) 가중치", "baseline weights")} {Object.entries(data.weights).map(([k, v]) => `${k} ${v}`).join(", ")}<br />
+      {L("엔진", "Engine")}: depeg-early-warning @{data.engine_commit} · {L("뉴스 기준표", "news rubric")} {data.news_rubric_version} · {L("가중치", "weights")} {Object.entries(data.weights).map(([k, v]) => `${k} ${v}`).join(", ")}<br />
       {L("생성", "Generated")} {data.generated_at} · scripts/build_depeg_replay.py · {L("점수는 실제 엔진 출력이며, 이 화면은 계산하지 않습니다.", "Scores are real engine output; this page computes nothing.")}
     </footer>
   );
