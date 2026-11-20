@@ -3,7 +3,8 @@ import "./depeg.css";
 import { LineChart, FactorBars, SERIES, INK } from "./charts.jsx";
 import LiveNow from "./LiveNow.jsx";
 import SimCrisis from "./SimCrisis.jsx";
-import { APPROVAL_TIMELINE, OUTCOMES } from "./content.js";
+import ScriptCard from "./ScriptCard.jsx";
+import { scriptValues } from "./content.js";
 
 /**
  * /depeg — ThreatWatch 위에 얹은 디페그 조기경보 시스템 설명 화면
@@ -26,6 +27,11 @@ const METRIC = {
 };
 
 const LANG_KEY = "tw-depeg-lang";
+const SCRIPT_KEY = "tw-depeg-script";   // "hide" 일 때만 숨김. 읽지 못하면 보이기
+
+function readScriptVisible() {
+  try { return localStorage.getItem(SCRIPT_KEY) !== "hide"; } catch { return true; }
+}
 
 function readLang() {
   try { return localStorage.getItem(LANG_KEY) === "en" ? "en" : "ko"; } catch { return "ko"; }
@@ -50,6 +56,26 @@ export default function DepegPage() {
 
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+
+  // 발표 대본: 세 카드가 함께 숨고 보인다
+  const [scriptOn, setScriptOn] = useState(readScriptVisible);
+  const toggleScript = () => setScriptOn((v) => !v);
+  useEffect(() => {
+    try { localStorage.setItem(SCRIPT_KEY, scriptOn ? "show" : "hide"); } catch { /* 저장 불가 환경 무시 */ }
+  }, [scriptOn]);
+  useEffect(() => {
+    // S 키로 전환. 입력칸(시연 키 등)에 포커스가 있거나 조합키와 함께면 무시한다.
+    // e.code 를 써서 한글 입력 상태(ㄴ)에서도 같은 자판 위치로 동작하게 한다.
+    function onKey(e) {
+      if (e.code !== "KeyS" || e.ctrlKey || e.metaKey || e.altKey || e.repeat || e.isComposing) return;
+      const el = e.target;
+      if (el instanceof HTMLElement
+          && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName))) return;
+      setScriptOn((v) => !v);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   useEffect(() => {
     fetch("/depeg/replay.json")
@@ -78,15 +104,23 @@ export default function DepegPage() {
     );
   }
 
+  // 대본의 {lead_hours} 같은 자리를 채울 값 — 전부 replay.json 에서 온다
+  const script = {
+    lang, visible: scriptOn, onToggle: toggleScript,
+    values: scriptValues(data, (t) => fmtTime(t, lang, true)),
+  };
+
   return (
     <div className="dp">
       <Header lang={lang} setLang={setLang} L={L} />
       <main className="dp-main">
         <Hero data={data} L={L} lang={lang} />
-        <LiveNow L={L} lang={lang} fmtTime={fmtTime} labelOf={(m) => METRIC[m]?.[lang] ?? m} />
-        <Replay data={data} L={L} lang={lang} />
+        <LiveNow L={L} lang={lang} fmtTime={fmtTime} labelOf={(m) => METRIC[m]?.[lang] ?? m}>
+          <ScriptCard part="live" {...script} />
+        </LiveNow>
+        <Replay data={data} L={L} lang={lang} script={<ScriptCard part="replay" {...script} />} />
         <SimCrisis L={L} lang={lang} fmtTime={fmtTime} labelOf={(m) => METRIC[m]?.[lang] ?? m} />
-        <Handoff data={data} L={L} lang={lang} />
+        <ScriptCard part="closing" {...script} />
         <Footer data={data} L={L} />
       </main>
     </div>
@@ -168,7 +202,7 @@ function Kpi({ label, value, sub, tone }) {
 // 2023년 3월 리플레이
 // =============================================================
 
-function Replay({ data, L, lang }) {
+function Replay({ data, L, lang, script }) {
   const crisis = data.crisis;
   const times = crisis.map((p) => p.t);
   const lowIdx = times.indexOf(data.summary.low.t);
@@ -177,7 +211,6 @@ function Replay({ data, L, lang }) {
   const watch = data.summary.watch;
   const lead = news.lead_conservative;       // 대표 리드타임 (Silvergate 기사 제외)
   const line = data.summary.lines.score_news;
-  const linePrice = data.summary.lines.score_price;
   // 관찰 단계: 뉴스 신호는 켜졌지만 점수는 경보 기준 아래인 시간대 (기존 "뉴스 신호 켜진 시간" 띠를 대체)
   const watchBands = useMemo(() => watch.segments.map((g) => ({
     from: times.indexOf(g.from), to: times.indexOf(g.to), color: SERIES.watchBand,
@@ -202,7 +235,6 @@ function Replay({ data, L, lang }) {
   const verdict = p.score_news >= thr.approval ? "high" : p.score_news >= thr.alert ? "alert" : p.watch ? "watch" : "ok";
   const afterFirstAlert = line.alert.first_at != null && p.t > line.alert.first_at;
   const sameHour = line.alert.first_at != null && line.alert.first_at === line.approval.first_at;
-  const at = (t) => fmtTime(t, lang).split(" · ")[0];
 
   // 세로 표시 2개: 대표 뉴스 신호 시작, 기준선 첫 돌파
   const vlines = [];
@@ -371,63 +403,7 @@ function Replay({ data, L, lang }) {
         </aside>
       </div>
 
-      <div className="dp-insights">
-        <div className="dp-insight">
-          <p className="dp-label">{L("관찰 단계 — 뉴스가 먼저 켜졌다", "Watch stage — news came first")}</p>
-          <p className="dp-num" style={{ margin: "10px 0 6px" }}>
-            {L(`최저점 ${lead.hours_before_low}시간 전부터 · 평소의 ${watch.ratio_vs_baseline}배`,
-               `From ${lead.hours_before_low} h before the low · ${watch.ratio_vs_baseline}× usual`)}
-          </p>
-          <p className="dp-small" style={{ margin: 0 }}>
-            {L(
-              `뉴스 신호는 최저점 ${lead.hours_before_low}시간 전(${at(lead.streak_start)})부터 켜져 점수가 평소의 ${watch.ratio_vs_baseline}배인 관찰 단계에 있었습니다. 관찰 단계는 경보가 아닙니다 — 뉴스 하나만으로는 ${thr.alert}점을 넘지 않도록 설계했기 때문입니다. '평소'는 같은 시각을 뉴스 신호 없이 계산한 점수(중앙값 ${watch.baseline_median}점)이고, 관찰 구간 점수의 중앙값은 ${watch.score_median}점입니다. ${lead.basis} 기준 · 뉴스 기준표 ${news.rubric_version}.`,
-              `The news signal was on from ${lead.hours_before_low} h before the low (${at(lead.streak_start)}), holding the score at ${watch.ratio_vs_baseline}× its usual level — the watch stage. A watch stage is not an alert: by design, news alone cannot push the score past ${thr.alert}. "Usual" is the same hours scored without the news signal (median ${watch.baseline_median}); the watch-stage median is ${watch.score_median}. Silvergate articles excluded · rubric ${news.rubric_version}.`,
-            )}
-          </p>
-        </div>
-        <div className="dp-insight">
-          <p className="dp-label">{L("기준선 돌파", "Crossing the lines")}</p>
-          <p className="dp-num" style={{ margin: "10px 0 6px" }}>
-            {line.alert.first_at
-              ? L(`최고 ${data.summary.crisis_max_score_news}점 · 최저점 ${line.alert.hours_before_low}시간 전 돌파`,
-                  `Peak ${data.summary.crisis_max_score_news} · crossed ${line.alert.hours_before_low} h before the low`)
-              : L(`최고 ${data.summary.crisis_max_score_news}점 / 기준 ${thr.alert}`, `Peak ${data.summary.crisis_max_score_news} / line ${thr.alert}`)}
-          </p>
-          <p className="dp-small" style={{ margin: 0 }}>
-            {!line.alert.first_at
-              ? L(`실제 데이터로는 경보 기준 ${thr.alert}점을 넘지 못했습니다.`, `Real data never reached the alert line (${thr.alert}).`)
-              : sameHour
-                ? L(
-                  `가격이 무너진 ${at(line.alert.first_at)}(최저점 ${line.alert.hours_before_low}시간 전)에 경보(${thr.alert})와 사람 승인(${thr.approval}) 기준을 동시에 넘었습니다. ${linePrice.alert.first_at === line.alert.first_at && !linePrice.approval.first_at
-                    ? `가격만 봤다면 같은 시각 경보(${thr.alert})까지만 가고 사람 승인(${thr.approval})에는 닿지 못했습니다(최고 ${linePrice.max}점).`
-                    : ""} 뉴스는 돌파 시각을 앞당긴 것이 아니라, 같은 시각의 단계를 경보에서 사람 승인으로 올렸습니다.`,
-                  `When price broke at ${at(line.alert.first_at)} (${line.alert.hours_before_low} h before the low), the score crossed the alert (${thr.alert}) and human-approval (${thr.approval}) lines in the same hour. ${linePrice.alert.first_at === line.alert.first_at && !linePrice.approval.first_at
-                    ? `On price alone it would have reached only the alert line (${thr.alert}) at that hour and never the approval line (${thr.approval}); its peak is ${linePrice.max}.`
-                    : ""} News did not move the crossing earlier; it raised that hour's stage from alert to human approval.`,
-                )
-                : L(
-                  `${at(line.alert.first_at)}(최저점 ${line.alert.hours_before_low}시간 전)에 경보 기준 ${thr.alert}점을 넘었습니다.${line.approval.first_at ? ` 사람 승인 기준 ${thr.approval}점은 ${at(line.approval.first_at)}에 넘었습니다.` : ` 사람 승인 기준 ${thr.approval}점에는 닿지 못했습니다.`}`,
-                  `Crossed the alert line (${thr.alert}) at ${at(line.alert.first_at)}, ${line.alert.hours_before_low} h before the low.${line.approval.first_at ? ` Crossed the approval line (${thr.approval}) at ${at(line.approval.first_at)}.` : ` Never reached the approval line (${thr.approval}).`}`,
-                )}
-          </p>
-        </div>
-        <div className="dp-insight">
-          <p className="dp-label">{L("평상시 4주", "Calm four weeks")}</p>
-          <p className="dp-num" style={{ margin: "10px 0 6px" }}>{L(`최고 ${data.summary.calm_max_score}점`, `Peak ${data.summary.calm_max_score}`)}</p>
-          <p className="dp-small" style={{ margin: 0 }}>
-            {L(`2023년 1~2월, 1달러에서 최대 ${data.summary.calm_max_abs_bps}bps만 벗어났습니다. 잘못 울린 경보 ${data.summary.calm_hours_breached}회. 가격만 본 값이며, 평상시 뉴스는 아직 미반영입니다.`,
-               `Jan–Feb 2023 never moved more than ${data.summary.calm_max_abs_bps} bps from $1. ${data.summary.calm_hours_breached} false alarms. Price only — calm-period news is not included yet.`)}
-          </p>
-          <div style={{ marginTop: 12 }}>
-            <LineChart compact
-              series={[{ key: "calm", label: "calm", color: SERIES.scorePrice, values: data.calm.map((d) => d.score_price) }]}
-              times={data.calm.map((d) => d.t)} yMin={0} yMax={100} yTicks={[0, 70]} formatY={String}
-              refLines={[{ y: thr.alert, label: "", color: INK.warn }]} height={90}
-              ariaLabel={L("평상시 4주 위험 점수", "Calm-period risk score")}
-            />
-          </div>
-        </div>
-      </div>
+      {script}
 
       <details className="dp-table-wrap">
         <summary>{L("표로 보기 (120시간)", "View as table (120 hours)")}</summary>
@@ -452,100 +428,6 @@ function Replay({ data, L, lang }) {
           </table>
         </div>
       </details>
-    </section>
-  );
-}
-
-// =============================================================
-// 경보 인계 (엔진 → ThreatWatch → 승인)
-// =============================================================
-
-function Handoff({ data, L, lang }) {
-  const { event, alert } = data.mock;
-  const thr = data.thresholds;
-  const map = data.tw_severity_map;
-
-  return (
-    <section className="dp-section" id="handoff">
-      <p className="dp-label">{L("경보 인계", "Handoff")}</p>
-      <h2 className="dp-h2">{L("경보가 ThreatWatch로 넘어가는 모습", "How an alert crosses into ThreatWatch")}</h2>
-      <p className="dp-lede" style={{ fontSize: 15.5 }}>
-        {L(
-          "아래는 가상 위기 상황(mock)을 실제 엔진과 경보 변환 코드에 넣어 나온 그대로의 결과입니다.",
-          "These are the literal outputs of the real engine and adapter on the mock crisis.",
-        )}
-      </p>
-
-      <div className="dp-handoff">
-        <div className="dp-panel" style={{ padding: 24 }}>
-          <p className="dp-label">1 · {L("엔진 점수", "Engine score")}</p>
-          <p className="dp-big" style={{ margin: "14px 0 6px", color: "var(--bad)" }}>{event.risk_score}</p>
-          <p className="dp-small" style={{ margin: 0 }}>
-            {L(`${thr.approval}점 이상이라 등급 '높음'`, `≥ ${thr.approval}, so severity "high"`)}
-          </p>
-          <div style={{ marginTop: 16 }}>
-            <FactorBars factors={event.top_factors} labelOf={(m) => METRIC[m]?.[lang] ?? m} />
-          </div>
-        </div>
-        <div className="dp-arrow" aria-hidden="true">→</div>
-        <div className="dp-panel" style={{ padding: 24 }}>
-          <p className="dp-label">2 · {L("ThreatWatch로 보내는 경보", "Alert sent to ThreatWatch")}</p>
-          <pre className="dp-pre">{JSON.stringify(alert, null, 2)}</pre>
-        </div>
-        <div className="dp-arrow" aria-hidden="true">→</div>
-        <div className="dp-panel" style={{ padding: 24 }}>
-          <p className="dp-label">3 · {L("ThreatWatch 등급 변환", "ThreatWatch mapping")}</p>
-          <p className="dp-small" style={{ margin: "10px 0 0" }}>
-            {L("AI가 다시 채점하지 않고 표대로만 옮깁니다.", "No LLM re-scoring — a fixed table.")}
-          </p>
-          <div className="dp-map">
-            {Object.entries(map).map(([sev, v]) => (
-              <div key={sev} className="dp-map-row"
-                   style={alert?.severity === sev ? { background: "var(--s-top)" } : undefined}>
-                <span className="dp-num">{sev}</span>
-                <span style={{ color: "var(--faint)" }}>→</span>
-                <span className="dp-num" style={{ textAlign: "right" }}>
-                  {v.level} · {v.score}
-                </span>
-              </div>
-            ))}
-          </div>
-          <p className="dp-small" style={{ margin: "14px 0 0" }}>
-            {L("디페그 경보는 보안 알림과 다른 전용 채널(threatwatch-depeg-alerts)로 갑니다.", "Depeg alerts go to their own channel (threatwatch-depeg-alerts).")}
-          </p>
-        </div>
-      </div>
-
-      <div className="dp-approval">
-        <div className="dp-panel">
-          <div className="dp-row">
-            <p className="dp-h3">{L("P1이면 사람이 결정할 때까지 기다립니다", "P1 waits for a human")}</p>
-            <span className="dp-chip warn">{L("대응표 v1 제안값", "Proposed (v1)")}</span>
-          </div>
-          <p className="dp-small" style={{ margin: "8px 0 0" }}>
-            {L("응답이 없으면 받는 사람을 늘려 가며 다시 알리고, 60분이 지나면 '만료'로 끝냅니다.", "Silence widens the audience step by step; after 60 minutes the request expires.")}
-          </p>
-          <div className="dp-tl">
-            {APPROVAL_TIMELINE.map((t, i) => (
-              <div key={t.at} className={`dp-tl-item ${i === APPROVAL_TIMELINE.length - 1 ? "end" : ""}`}>
-                <span className="dp-num">{lang === "ko" ? t.at : (t.atEn || t.at)}</span>
-                <p>{t[lang]}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="dp-panel">
-          <p className="dp-h3">{L("세 가지 결과", "Three outcomes")}</p>
-          <div className="dp-outcomes">
-            {OUTCOMES.map((o) => (
-              <div key={o.key} className="dp-outcome">
-                <span className={`dp-chip ${o.tone}`} style={{ justifySelf: "start" }}>{o[lang]}</span>
-                <span className="dp-small">{lang === "ko" ? o.dKo : o.dEn}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
     </section>
   );
 }
