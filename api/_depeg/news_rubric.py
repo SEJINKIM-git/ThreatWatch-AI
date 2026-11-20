@@ -1,4 +1,4 @@
-# AUTO-COPIED from depeg-early-warning/src/intelligence/news_rubric.py @8ef6cac
+# AUTO-COPIED from depeg-early-warning/src/intelligence/news_rubric.py @9e7ca3b
 # 직접 고치지 말 것 — 엔진 저장소에서 고친 뒤 scripts/sync_depeg_engine.sh 로 다시 복사
 """뉴스 기준표 v2 — 기사 제목을 정해진 규칙으로만 분류한다 (AI 판단 없음).
 

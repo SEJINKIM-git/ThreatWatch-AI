@@ -109,10 +109,14 @@ function LiveBody({ data, L, lang, labelOf, fmtTime, reload }) {
   const news = inputs.news;
   const att = inputs.attestation;
 
+  // 관찰 단계: 뉴스 신호 켜짐 AND 경보 기준 미만 (장면 2 와 같은 규칙 — 서버가 판정해서 준다)
+  const watch = verdict === "ok" ? data.watch : null;
   const verdictText = {
-    ok: L(`경보 없음 — ${thresholds.alert}점 미만`, `No alert — below ${thresholds.alert}`),
+    ok: watch
+      ? L("관찰 단계 — 경보 전", "Watch stage — before any alert")
+      : L(`경보 없음 — ${thresholds.alert}점 미만`, `No alert — below ${thresholds.alert}`),
     alert: L("경보 → 운영자 알림 (ThreatWatch P2)", "Alert → operator (ThreatWatch P2)"),
-    high: L("높음 → 사람 승인 요청 (ThreatWatch P1)", "High → human approval (ThreatWatch P1)"),
+    high: L("사람 승인 단계 → 승인 요청 (ThreatWatch P1)", "Human approval stage → approval request (ThreatWatch P1)"),
   }[verdict];
 
   return (
@@ -133,11 +137,16 @@ function LiveBody({ data, L, lang, labelOf, fmtTime, reload }) {
               </p>
               <p className="dp-small" style={{ margin: "8px 0 0" }}>{L("기준", "Lines")} {thresholds.alert} / {thresholds.approval}</p>
             </div>
-            <div className={`dp-verdict ${verdict}`} style={{ alignSelf: "end" }}>
+            <div className={`dp-verdict ${watch ? "watch" : verdict}`} style={{ alignSelf: "end" }}>
               <strong>{verdictText}</strong>
-              {verdict === "ok" && news.flag === null
+              {watch
+                ? (watch.ratio
+                  ? L(`점수가 평소의 ${watch.ratio}배, 뉴스 위험 신호 켜짐. 경보는 나가지 않고 운영자가 대시보드에서 지켜보는 단계입니다. (평소 = 같은 입력에서 뉴스 신호만 끈 점수 ${watch.score_without_news}점)`,
+                      `Score is ${watch.ratio}× its usual level with the news risk signal on. No alert goes out; operators watch it on the dashboard. (Usual = same inputs with the news signal off: ${watch.score_without_news})`)
+                  : L("뉴스 위험 신호 켜짐. 경보는 나가지 않고 운영자가 대시보드에서 지켜보는 단계입니다.", "News risk signal on. No alert goes out; operators watch it on the dashboard."))
+                : verdict === "ok" && news.flag === null
                 ? L("뉴스를 확인하지 못해 가격·공시만으로 낸 점수입니다. 뉴스 신호는 '위험 없음'이 아니라 '확인 불가'입니다.", "Scored from price and filings only — news could not be checked, which is not the same as no news risk.")
-                : verdict === "ok" && (news.flag || event.risk_score >= 25)
+                : verdict === "ok" && event.risk_score >= 25
                 ? L("기준선 아래지만 주의할 신호가 있습니다. 운영자가 대시보드에서 지켜보는 단계입니다.", "Below the line, but there are warning signs. Operators watch it on the dashboard.")
                 : verdict === "ok"
                 ? L("평상시 범위입니다. 오탐 없이 조용히 있는 것도 시스템의 역할입니다.", "Within the normal range. Staying quiet without false alarms is part of the job.")

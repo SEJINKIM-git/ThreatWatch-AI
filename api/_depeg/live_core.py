@@ -123,9 +123,16 @@ def analyze(ohlc: list[dict[str, Any]], articles: list[dict[str, Any]], now: dat
     event = engine.compute_risk_score(signals, coin="USDC")
     score = event["risk_score"]
     verdict = "high" if score >= THRESHOLD_APPROVAL else "alert" if score >= THRESHOLD_ALERT else "ok"
+    # 관찰 단계: 뉴스 신호는 켜졌지만 점수는 경보 기준 아래 (장면 2 와 같은 규칙. 새 기준선이 아니라 표시).
+    # "평소의 ○배"는 같은 입력에서 뉴스 신호만 끈 점수와 비교한다.
+    watch = None
+    if flag == 1 and score < THRESHOLD_ALERT:
+        quiet = engine.compute_risk_score(build_signals(latest, 0, now), coin="USDC")["risk_score"]
+        watch = {"score_without_news": quiet, "ratio": round(score / quiet, 1) if quiet > 0 else None}
     return {
         "generated_at": iso(now),
         "verdict": verdict,
+        "watch": watch,
         "thresholds": {"alert": THRESHOLD_ALERT, "approval": THRESHOLD_APPROVAL},
         "event": event,
         "inputs": {
