@@ -67,30 +67,25 @@ def build_message(case: dict, approval_id: str, callback_url: str) -> tuple:
     if incident_type.startswith(DEPEG_PREFIX):
         # 가격 정보가 없는 디페그 경보 (대시보드가 MKT 를 보내기 전 버전과의 하위 호환).
         wait = depeg_advisory.timeout_text(APPROVAL_TIMEOUT_SEC)
-        minutes = APPROVAL_TIMEOUT_SEC // 60
         # SNS 메일 제목은 ASCII만 허용된다 (한글·em dash가 있으면 publish 가 실패). 본문은 UTF-8 가능.
         subject = f"[APPROVAL] Depeg alert {alert_id[:8]} - response decision required"
         lines = [
-            "스테이블코인 디페그 조기경보 — 대응 실행 여부를 결정해 주세요.",
             "Stablecoin depeg early warning — your decision is required.",
             "",
             f"Alert ID   : {alert_id}",
             f"Level      : {case.get('risk_level', 'n/a')} (ThreatWatch {case.get('risk_score', 'n/a')}/100)",
             f"Type       : {incident_type}",
             "",
-            "Summary (디페그 엔진 판정)",
+            "Summary (depeg engine verdict)",
             f"  {case.get('summary', 'n/a')}",
             "",
-            "승인 — 대응 실행 (운영자 상황실 유지, 자금팀 노출 축소 검토, 사용자 안내 1회)",
-            "Approve — run the response:",
+            "Approve — run the response (keep the war room open, treasury reviews exposure, one user notice):",
             f"  {approve_url}",
             "",
-            "반려 — 오탐·데이터 장애로 판단, 기록만 남김",
-            "Reject — false alarm, record only:",
+            "Reject — false alarm or data outage, record only:",
             f"  {reject_url}",
             "",
-            f"이 요청은 {wait} 뒤 만료됩니다. 무응답도 결과로 기록되고 상급자에게 통지됩니다.",
-            f"This request expires in {minutes} minutes; no answer is recorded and escalated.",
+            f"This request expires in {wait}; no answer is recorded and escalated.",
         ]
         return subject, lines
 

@@ -13,6 +13,9 @@ on:
       - "build.sh"
       - ".github/workflows/terraform.yml"
       - "authorizer.py"
+      - "approval_*.py"
+      - "depeg_advisory.py"
+      - "topic_router.py"
   push:
     branches: [main]
     paths:
@@ -26,6 +29,9 @@ on:
       - "build.sh"
       - ".github/workflows/terraform.yml"
       - "authorizer.py"
+      - "approval_*.py"
+      - "depeg_advisory.py"
+      - "topic_router.py"
   workflow_dispatch:
 
 # OIDC 토큰 발급에 필요합니다. 액세스 키를 쓰지 않는 대가로 이 권한이 필요합니다.

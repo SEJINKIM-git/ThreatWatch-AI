@@ -6,6 +6,7 @@
 (terraform/hitl.tf 의 archive_file).
 
 전부 순수 함수다. 네트워크·환경변수·시계를 건드리지 않는다.
+메일·화면에 나가는 문구는 모두 영어다.
 권고는 사전에 정한 고정 규칙이며 AI 판단이 아니다. 매매 지시 문구는 쓰지 않는다.
 
 입력 계약 — 대시보드(api/_depeg/sim_core.py)가 경보 description 끝에 붙이는 한 줄:
@@ -33,41 +34,53 @@ _AT_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})(?::\d{2}(?:\.\d+)?)?(?:
 SCORE_ALERT = 70
 SCORE_APPROVAL = 85
 
-GRADE_WATCH = "주의"
-GRADE_WARN = "경계"
-GRADE_SEVERE = "심각"
+GRADE_WATCH = "Watch"
+GRADE_WARN = "Warning"
+GRADE_SEVERE = "Severe"
 
 _BASE = {
     GRADE_WATCH: (
-        ["가격·공지 모니터링", "신규 대규모 매수 신중"],
-        ["시장 상황 점검", "공지 준비"],
+        [
+            "Monitor the price and official announcements.",
+            "Be cautious with large new purchases.",
+        ],
+        [
+            "Review market conditions.",
+            "Prepare a public statement.",
+        ],
     ),
     GRADE_WARN: (
-        ["신규 매수·담보 사용 보류 검토", "상환 경로 확인"],
-        ["준비금 현황 공개 준비", "상환 처리 용량 점검"],
+        [
+            "Consider pausing new purchases and use as collateral.",
+            "Confirm your redemption route.",
+        ],
+        [
+            "Prepare to disclose the current state of reserves.",
+            "Check redemption processing capacity.",
+        ],
     ),
     GRADE_SEVERE: (
         [
-            "신규 매수와 담보·결제 수단 사용을 잠시 멈추고 보유 규모를 점검하세요.",
-            "1:1 상환은 발행사 공식 채널로만 진행하고, 장외 할인 매도 권유에 주의하세요.",
-            "거래소·디파이의 입출금·청산 기준 변경 공지를 확인하세요.",
+            "Pause new purchases and use as collateral or payment, and review the size of your holdings.",
+            "Redeem 1:1 only through the issuer's official channels, and be wary of off-market offers to buy at a discount.",
+            "Check exchange and DeFi notices for changes to deposits, withdrawals and liquidation thresholds.",
         ],
         [
-            "1시간 안에 준비금 구성과 은행별 예치 현황을 공개하세요.",
-            "상환 처리 용량을 늘리고, 지연이 있으면 예상 처리 시간을 공지하세요.",
-            "주요 거래소·시장조성자와 유동성 공급 계획을 확인하세요.",
+            "Within 1 hour, disclose the reserve composition and the deposits held at each bank.",
+            "Increase redemption processing capacity and, if there are delays, publish expected processing times.",
+            "Confirm liquidity provision plans with major exchanges and market makers.",
         ],
     ),
 }
 
-EXTRA_ISSUER_NEWS = "수탁은행 노출 규모와 대체 은행 확보 여부를 공개하세요."
-EXTRA_ISSUER_REDEMPTION = "상환 대기 규모와 처리 순서를 공지하세요."
-EXTRA_INVESTOR_POOL = "유동성 풀에서의 대량 교환은 체결 가격을 확인한 뒤 진행하세요."
+EXTRA_ISSUER_NEWS = "Disclose the exposure to the custodian bank and whether alternative banks are in place."
+EXTRA_ISSUER_REDEMPTION = "Publish the size of the redemption queue and the processing order."
+EXTRA_INVESTOR_POOL = "Check the execution price before making large swaps in liquidity pools."
 
 REDEMPTION_THRESHOLD_USD = 5e8
 POOL_THRESHOLD = 0.5
 
-DISCLAIMER = "※ 사전에 정한 규칙에 따른 위험 관리 권고이며 투자 권유가 아닙니다."
+DISCLAIMER = "Note: this is risk-management guidance produced by predefined rules. It is not investment advice."
 
 
 def is_depeg(incident_type) -> bool:
@@ -155,10 +168,12 @@ def recommendations(market):
     return investor, issuer
 
 
-def _usd_korean(amount):
-    if amount >= 1e8:
-        return f"{amount / 1e8:,.1f}".removesuffix(".0") + "억 달러"
-    return f"{amount / 1e4:,.0f}만 달러"
+def _usd_text(amount):
+    if amount >= 1e9:
+        return f"${amount / 1e9:,.2f}".rstrip("0").rstrip(".") + " billion"
+    if amount >= 1e6:
+        return f"${amount / 1e6:,.1f}".removesuffix(".0") + " million"
+    return f"${amount:,.0f}"
 
 
 def _at_display(at):
@@ -168,15 +183,16 @@ def _at_display(at):
 
 def _score_note(score):
     if score >= SCORE_APPROVAL:
-        return f"경보 {SCORE_ALERT} · 사람 승인 {SCORE_APPROVAL} 초과"
+        return f"above alert {SCORE_ALERT} and human approval {SCORE_APPROVAL}"
     if score >= SCORE_ALERT:
-        return f"경보 {SCORE_ALERT} 초과 · 사람 승인 기준 {SCORE_APPROVAL}"
-    return f"경보 기준 {SCORE_ALERT} · 사람 승인 기준 {SCORE_APPROVAL}"
+        return f"above alert {SCORE_ALERT}; human approval threshold {SCORE_APPROVAL}"
+    return f"alert threshold {SCORE_ALERT}; human approval threshold {SCORE_APPROVAL}"
 
 
 def timeout_text(seconds):
-    """승인 대기 시간 표시. 3600 → '60분'."""
-    return f"{max(1, int(seconds) // 60)}분"
+    """승인 대기 시간 표시. 3600 → '60 minutes'."""
+    minutes = max(1, int(seconds) // 60)
+    return f"{minutes} minute" + ("" if minutes == 1 else "s")
 
 
 def request_subject(market, alert_id):
@@ -190,60 +206,59 @@ def request_lines(market, alert_id, approve_url, reject_url, timeout_sec):
     demo = market.get("demo") == 1
     dev_bps = market["dev_bps"]
     dev_pct = dev_bps / 100
-    level = grade(dev_bps) or "관찰 (50bps 미만)"
+    level = grade(dev_bps) or "Monitoring (below 50bps)"
     investor, issuer = recommendations(market)
 
-    title = "스테이블코인 디페그 조기경보 — 권고안 발송 결정 요청"
+    title = "Stablecoin depeg early warning — advisory decision required"
     lines = [
-        f"[시연 · 모의 위기] {title}" if demo else title,
-        "Stablecoin depeg early warning — advisory decision required",
+        f"[DEMO · SIMULATED CRISIS] {title}" if demo else title,
         "",
-        "■ 가격 변동",
-        f"  코인          {market['coin']} (목표 {market['peg']:.4f} USD)",
+        "== Price move ==",
+        f"  Coin           {market['coin']} (target {market['peg']:.4f} USD)",
     ]
 
     when = _at_display(market.get("at"))
-    lines.append(f"  현재 가격     {market['price']:.4f} USD" + (f"  ({when})" if when else ""))
-    lines.append(f"  이탈폭        {dev_bps:+d}bps ({dev_pct:+.2f}%)  → 등급: {level}")
+    lines.append(f"  Current price  {market['price']:.4f} USD" + (f"  ({when})" if when else ""))
+    lines.append(f"  Deviation      {dev_bps:+d}bps ({dev_pct:+.2f}%)  -> Grade: {level}")
     if "ref24h" in market and "chg24h_pct" in market:
         lines.append(
-            f"  24시간 변화   {market['ref24h']:.4f} → {market['price']:.4f} ({market['chg24h_pct']:+.2f}%)"
+            f"  24h change     {market['ref24h']:.4f} -> {market['price']:.4f} ({market['chg24h_pct']:+.2f}%)"
         )
     if "score" in market:
-        lines.append(f"  위험 점수     {market['score']:.1f} / 100  ({_score_note(market['score'])})")
+        lines.append(f"  Risk score     {market['score']:.1f} / 100  ({_score_note(market['score'])})")
 
     reasons = []
     if market.get("redemption_usd", 0) > 0:
-        reasons.append(f"  - 대량 상환    시간당 {_usd_korean(market['redemption_usd'])}")
+        reasons.append(f"  - Heavy redemptions   {_usd_text(market['redemption_usd'])} per hour")
     if "pool" in market:
-        reasons.append(f"  - 유동성 쏠림  {market['pool']:.2f}")
+        reasons.append(f"  - Pool imbalance      {market['pool']:.2f}")
     if market.get("news") == 1:
-        reasons.append("  - 뉴스         발행사·수탁은행 위기 기사 감지")
+        reasons.append("  - News                Crisis coverage of the issuer or its custodian bank detected")
     if reasons:
-        lines += ["", "■ 판단 근거"] + reasons
+        lines += ["", "== Why this was flagged =="] + reasons
 
-    lines += ["", "■ 투자자 권고"]
+    lines += ["", "== Advisory for investors =="]
     lines += [f"  {n}. {text}" for n, text in enumerate(investor, 1)]
-    lines += ["", "■ 발행사 권고"]
+    lines += ["", "== Advisory for the issuer =="]
     lines += [f"  {n}. {text}" for n, text in enumerate(issuer, 1)]
 
-    approve = "[승인] 위 권고안을 투자자·발행사에 발송합니다."
+    approve = "[APPROVE] Send the advisory above to investors and the issuer."
     if demo:
-        approve += " (시연: 발송 확정만 기록)"
+        approve += " (Demo: only the decision to send is recorded.)"
 
     lines += [
         "",
         DISCLAIMER,
         "",
-        "──── 결정 ────",
+        "==== Decision ====",
         approve,
         f"  {approve_url}",
         "",
-        "[반려] 권고안을 보내지 않습니다. 오탐·데이터 오류로 기록하고 감시는 계속합니다.",
+        "[REJECT] Do not send the advisory. Record it as a false alarm or data error; monitoring continues.",
         f"  {reject_url}",
         "",
-        f"이 요청은 {timeout_text(timeout_sec)} 뒤 만료됩니다. "
-        "응답이 없으면 권고안은 발송되지 않고 랩장에게 통지됩니다.",
+        f"This request expires in {timeout_text(timeout_sec)}. "
+        "If there is no response, the advisory is not sent and the lab lead is notified.",
         f"Alert ID: {alert_id}",
     ]
     return lines
@@ -252,15 +267,22 @@ def request_lines(market, alert_id, approve_url, reject_url, timeout_sec):
 # ---- 결정 뒤 화면·결과 메일 ----
 
 RESULT_TEXT = {
-    "approve": "권고안 발송 승인 — 투자자·발행사 권고 발송 확정",
-    "reject": "권고안 반려 — 발송 안 함, 오탐 기록·감시 유지",
-    "expired": "무응답 만료 — 권고안 미발송, 랩장 통지",
+    "approve": "Advisory approved — sending to investors and the issuer is confirmed.",
+    "reject": "Advisory rejected — not sent; recorded as a false alarm, monitoring continues.",
+    "expired": "Expired with no response — advisory not sent; the lab lead has been notified.",
 }
 
 # 승인 링크를 누른 뒤 브라우저에 보이는 (제목, 설명). 고정 문구만 쓴다 — 입력값을 HTML 에 넣지 않는다.
 PAGE_TEXT = {
-    "approve": ("권고안 발송 승인", "투자자·발행사 권고 발송이 확정되었습니다. 이 창은 닫아도 됩니다."),
-    "reject": ("권고안 반려", "권고안을 보내지 않습니다. 오탐으로 기록하고 감시는 계속합니다. 이 창은 닫아도 됩니다."),
+    "approve": (
+        "Advisory approved",
+        "Sending the advisory to investors and the issuer is confirmed. You can close this window.",
+    ),
+    "reject": (
+        "Advisory rejected",
+        "The advisory will not be sent. It is recorded as a false alarm and monitoring continues. "
+        "You can close this window.",
+    ),
 }
 
 
